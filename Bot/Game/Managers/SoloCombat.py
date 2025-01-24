@@ -4,7 +4,9 @@ from typing import Dict, List, Tuple
 from Game.Models.Monster import Monster
 from Game.Models.Player import Player
 from Game.Database.database import Database
-from Game.Managers.player_db_connection import handle_player_death, update_player_rewards
+from Game.Managers.player_db_connection import handle_player_death, update_player_rewards, update_player_hp
+
+
 
 class CombatSystem:
     @staticmethod
@@ -92,9 +94,9 @@ class RaidManager:
                 level=monster_data["level"],
                 rarity=current_rarity,
                 monster_type=monster_data.get("monster_type", "generic"),
-                hp=monster_data.get("base_hp", 50),
-                damage=monster_data.get("base_damage", 5),
-                defense=monster_data.get("base_defense", 3),
+                hp=monster_data.get("hp", 50),
+                damage=monster_data.get("damage", 5),
+                defense=monster_data.get("defense", 3),
                 experience_reward=monster_data.get("experience_reward", 15),
                 gold_reward=monster_data.get("gold_reward", 10),
                 loot_table=monster_data.get("loot_table", [])
@@ -114,7 +116,9 @@ class RaidManager:
             "battles": [],
             "raid_complete": False,
             "player_survived": True,
-            "damage_taken": 0
+            "damage_taken": 0, 
+            "max_hp": player.max_hp,
+            "current_hp": player.current_hp
         }
         
         for monster in monsters:
@@ -138,6 +142,8 @@ class RaidManager:
                 break
         
         raid_results["raid_complete"] = len(raid_results["monsters_defeated"]) == len(monsters)
+        raid_results["current_hp"] = player.current_hp
+        raid_results["max_hp"] = player.max_hp
         return raid_results
 
     async def process_battle(self, player: Player, monster: Monster) -> Dict:
@@ -163,8 +169,7 @@ class RaidManager:
 def create_raid_summary(results: Dict) -> str:
     summary = "🗡️ **Raid Summary** 🗡️"
     
-    summary += f"\n❤️ **Health Lost:** {results['damage_taken']}\n"
-    
+    summary += f"\n\u2764\ufe0f  **Health:** {results['current_hp']} / {results['max_hp']}\n"
     summary += "\n**Monsters Defeated:**\n"
     for monster_id in results["monsters_defeated"]:
         summary += f"✅ {monster_id}\n"
@@ -187,9 +192,11 @@ def create_raid_summary(results: Dict) -> str:
     
     return summary
 
-async def handle_raid_command(player: Player, tower_level: int):
+async def handle_raid_command(player: Player):
     raid_manager = RaidManager()
-    results = await raid_manager.process_raid(player, tower_level)
+    
+    # Process raid
+    results = await raid_manager.process_raid(player, player.tower_level)
     
     # Check player health after raid
     if player.current_hp <= 0:
@@ -198,11 +205,6 @@ async def handle_raid_command(player: Player, tower_level: int):
         summary += "\n\n**Death Consequences:**"
         summary += f"\n💀 HP Restored: {death_summary['hp_restored']}"
         summary += f"\n💰 Gold Lost: {death_summary['gold_lost']}"
-        
-        if death_summary["dropped_items"]:
-            summary += "\n**Items Dropped:**"
-            for item in death_summary["dropped_items"]:
-                summary += f"\n❌ {item['slot'].title()}: {item['item']['name']}"
         
         return summary
     
@@ -221,3 +223,8 @@ async def handle_raid_command(player: Player, tower_level: int):
         summary += f"\n🎉 **Level Up!** You are now level {reward_update['new_level']}! 🎉"
     
     return summary
+
+async def handle_camp_command(player):
+    player.current_hp = player.max_hp
+    update_player_hp(player)
+    return "Healed! Current HP: " + str(player.current_hp)

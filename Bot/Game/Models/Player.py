@@ -44,6 +44,11 @@ class Player:
         # Party info
         self.current_party_id = None
 
+        #Guild info
+        self.guild_id = None
+
+        self.tower_level = 1
+
     def to_dict(self) -> Dict:
         """Convert player data to dictionary for MongoDB storage"""
         return {
@@ -60,7 +65,9 @@ class Player:
             "equipment": self.equipment,
             "inventory": self.inventory,
             "character_class": self.character_class,
-            "current_party_id": self.current_party_id
+            "current_party_id": self.current_party_id,
+            "guild_id": self.guild_id,
+            "tower_level": self.tower_level
         }
 
     @classmethod
@@ -98,5 +105,9 @@ class Player:
         
         player.character_class = data.get("character_class")
         player.current_party_id = data.get("current_party_id")
-        
+        player.guild_id = data.get('guild_id')
+        player.tower_level = data.get('tower_level')
+
         return player
+    
+    

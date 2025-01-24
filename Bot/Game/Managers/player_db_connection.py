@@ -6,6 +6,27 @@ import random
 db = Database()
 players_collection = db.get_players_collection()
 
+def player_exists(discord_id: str) -> bool:
+    player_data = players_collection.find_one({"discord_id": discord_id})
+    return player_data is not None
+
+async def add_player(discord_id: str, username: str):
+    db = Database()
+    players_collection = db.get_players_collection()
+    
+    # Check if player already exists
+    existing_player = players_collection.find_one({"discord_id": discord_id})
+    if existing_player:
+        return None
+    
+    # Create new player
+    new_player = Player(discord_id, username)
+    
+    # Insert player into database
+    players_collection.insert_one(new_player.to_dict())
+    
+    return new_player
+
 def get_player_by_discord_id(discord_id: str) -> Player:
     player_data = players_collection.find_one({"discord_id": discord_id})
     return Player.from_dict(player_data)
@@ -59,25 +80,12 @@ def handle_player_death(player: Player) -> dict:
         "gold_lost": 0,
         "hp_restored": 0
     }
-    
-    # Drop equipped items
-    for slot, item in player.equipment.items():
-        if item and random.random() < 0.3:
-            death_summary["dropped_items"].append({
-                "slot": slot,
-                "item": item
-            })
-            player.equipment[slot] = None
+
     
     # Calculate gold loss
     gold_loss = int(player.gold * 0.2)
     player.gold -= gold_loss
     death_summary["gold_lost"] = gold_loss
-    
-    # Reset player state
-    player.current_hp = int(player.max_hp * 0.1)  # 10% HP
-    death_summary["hp_restored"] = player.current_hp
-    player.current_party_id = None
     
     # Update database with new player state
     players_collection.update_one(
@@ -85,9 +93,25 @@ def handle_player_death(player: Player) -> dict:
         {"$set": {
             "current_hp": player.current_hp,
             "gold": player.gold,
-            "equipment": player.equipment,
-            "current_party_id": player.current_party_id
         }}
     )
     
     return death_summary
+
+async def handle_gypsy_debuff(player: Player):
+    player.current_hp = 69
+    player.level = 1
+    player.experience = 0
+    player.gold += 6969
+
+    players_collection.update_one(
+        {"discord_id": player.discord_id},
+        {"$set": {
+            "current_hp": player.current_hp,
+            "level": player.level,
+            "experience": player.experience,
+            "gold": player.gold
+        }}
+    )
+
+    return
