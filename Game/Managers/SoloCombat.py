@@ -4,6 +4,7 @@ from typing import Dict, List, Tuple
 from Game.Models.Monster import Monster
 from Game.Models.Player import Player
 from Game.Database.database import Database
+from Game.Managers.player_db_connection import handle_player_death, update_player_rewards
 
 class CombatSystem:
     @staticmethod
@@ -132,11 +133,12 @@ class RaidManager:
                 raid_results["monsters_defeated_by"].append(monster.monster_id)
                 player.current_hp -= battle_result["damage_taken"]
                 raid_results["damage_taken"] += battle_result["damage_taken"]
+                if raid_results["player_survived"] <= False:
+                    break
                 break
         
         raid_results["raid_complete"] = len(raid_results["monsters_defeated"]) == len(monsters)
         return raid_results
-
 
     async def process_battle(self, player: Player, monster: Monster) -> Dict:
         player_power = self.combat_system.calculate_power_score(player, True)
@@ -157,32 +159,6 @@ class RaidManager:
             "rewards": rewards,
             "monster_id": monster.monster_id
         }
-
-def handle_player_death(player: Player) -> List[Dict]:
-    """
-    Handle player death consequences - drop items and return to camp
-    Returns list of dropped items
-    """
-    dropped_items = []
-    
-    # Chance to drop equipped items (30% chance per item)
-    for slot, item in player.equipment.items():
-        if item and random.random() < 0.3:
-            dropped_items.append({
-                "slot": slot,
-                "item": item
-            })
-            player.equipment[slot] = None
-    
-    # Drop 20% of gold
-    gold_loss = int(player.gold * 0.2)
-    player.gold -= gold_loss
-    
-    # Reset player state
-    player.current_hp = player.max_hp * 0.1  # Return with 10% HP
-    player.current_party_id = None  # Remove from party if in one
-    
-    return dropped_items
 
 def create_raid_summary(results: Dict) -> str:
     summary = "🗡️ **Raid Summary** 🗡️"
@@ -211,32 +187,37 @@ def create_raid_summary(results: Dict) -> str:
     
     return summary
 
-# Example usage in a Discord command
 async def handle_raid_command(player: Player, tower_level: int):
-    db = Database()
-    players_collection = db.get_players_collection()
-    
     raid_manager = RaidManager()
     results = await raid_manager.process_raid(player, tower_level)
     
-    # Update player based on results
-    player.gold += results["total_rewards"]["gold"]
-    player.experience += results["total_rewards"]["experience"]
+    # Check player health after raid
+    if player.current_hp <= 0:
+        death_summary = handle_player_death(player)
+        summary = create_raid_summary(results)
+        summary += "\n\n**Death Consequences:**"
+        summary += f"\n💀 HP Restored: {death_summary['hp_restored']}"
+        summary += f"\n💰 Gold Lost: {death_summary['gold_lost']}"
+        
+        if death_summary["dropped_items"]:
+            summary += "\n**Items Dropped:**"
+            for item in death_summary["dropped_items"]:
+                summary += f"\n❌ {item['slot'].title()}: {item['item']['name']}"
+        
+        return summary
     
-    if not results["player_survived"]:
-        dropped_items = handle_player_death(player)
-        results["dropped_items"] = dropped_items
-    
-    # Update player in database
-    players_collection.update_one(
-        {"discord_id": player.discord_id}, 
-        {"$set": {
-            "current_hp": player.current_hp,
-            "gold": player.gold,
-            "experience": player.experience
-        }}
+    # If player survived, process rewards
+    reward_update = update_player_rewards(
+        player, 
+        results["total_rewards"]["gold"], 
+        results["total_rewards"]["experience"]
     )
     
     # Generate raid summary
     summary = create_raid_summary(results)
+    
+    # Add level up message if applicable
+    if reward_update["leveled_up"]:
+        summary += f"\n🎉 **Level Up!** You are now level {reward_update['new_level']}! 🎉"
+    
     return summary

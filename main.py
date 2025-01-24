@@ -1,7 +1,7 @@
 import asyncio
 from Game.Models.Player import Player
 from Game.Managers.SoloCombat import handle_raid_command
-from Game.Managers.player_db_connection import get_player_by_discord_id
+from Game.Managers.player_db_connection import get_player_by_discord_id, update_player_hp
 
 async def main():
     # Initialize a test player
@@ -33,15 +33,6 @@ async def main():
             summary = await handle_raid_command(player, tower_level)
             print("\n" + summary)
             
-            # # Update player state
-            # if not results["player_survived"]:
-            #     dropped_items = handle_player_death(player)
-            #     print("\nYou have been defeated!")
-            #     if dropped_items:
-            #         print("Items lost:")
-            #         for item in dropped_items:
-            #             print(f"- {item['item']['name']} from {item['slot']}")
-            
             print(f"Current HP: {player.current_hp}/{player.max_hp}")
             print(f"Gold: {player.gold}")
             
@@ -49,6 +40,7 @@ async def main():
             # Heal player to full
             old_hp = player.current_hp
             player.current_hp = player.max_hp
+            update_player_hp(player)
             print(f"\n🏕️ Resting at camp...")
             print(f"Healed for {player.max_hp - old_hp} HP")
             print(f"Current HP: {player.current_hp}/{player.max_hp}")
