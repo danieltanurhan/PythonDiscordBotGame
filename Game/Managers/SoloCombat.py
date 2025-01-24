@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Dict, List, Tuple
 from Game.Models.Monster import Monster
 from Game.Models.Player import Player
+from Game.Database.database import Database
 
 class CombatSystem:
     @staticmethod
@@ -25,16 +26,18 @@ class CombatSystem:
             base_score += equipment_bonus
         else:
             # Monster power calculation
-            base_score += entity.level * 8
-            base_score += entity.damage * 2
+            base_score += entity.level * 6
+            base_score += entity.damage * 1.3
             base_score += entity.defense
             
             # Rarity multipliers
             rarity_multipliers = {
-                "common": 1.0,
-                "rare": 1.3,
-                "epic": 1.6,
-                "legendary": 2.0
+                "E": 1.0,
+                "D": 1.3,
+                "C": 1.6,
+                "B": 2.0,
+                "A": 2.5,
+                "S": 3.0
             }
             base_score *= rarity_multipliers.get(entity.rarity, 1.0)
         
@@ -49,138 +52,110 @@ class RaidManager:
         self.combat_system = CombatSystem()
 
     async def generate_monsters(self, tower_level: int, player_level: int) -> List[Monster]:
-        """
-        Generate monsters based on tower and player level
-        - Base monsters: 3-7 per raid
-        - Higher tower levels increase monster count and level
-        - Monster level ranges from (player_level - 2) to (player_level + 2)
-        """
-        # Calculate number of monsters based on tower level
-        base_monster_count = random.randint(3, 7)
-        bonus_monsters = tower_level // 5  # Every 5 tower levels add potential for 1 more monster
-        max_monsters = min(base_monster_count + bonus_monsters, 10)  # Cap at 10 monsters
-        num_monsters = random.randint(base_monster_count, max_monsters)
+        db = Database()
+        monsters_collection = db.get_monsters_collection()
         
-        monsters = []
-        
-        # Tower level influences monster rarity chances
-        rarity_chances = {
-            "legendary": min(0.05 + (tower_level * 0.005), 0.15),  # Caps at 15%
-            "epic": min(0.15 + (tower_level * 0.01), 0.25),        # Caps at 25%
-            "rare": min(0.25 + (tower_level * 0.015), 0.35),       # Caps at 35%
-            # Common fills the remainder
+        # Define monster ranges by rarity
+        rarity_ranges = {
+            "E": (1, 10),   # Easiest monsters
+            "D": (11, 20),  # Next difficulty tier
+            "C": (21, 30),
+            "B": (31, 40),
+            "A": (41, 50),
+            "S": (51, 60)   # Hardest monsters
         }
         
-        for _ in range(num_monsters):
-            # Determine monster level
-            level_variance = random.randint(-2, 2)
-            monster_level = max(1, player_level + level_variance + (tower_level // 10))
-            
-            # Determine rarity
-            roll = random.random()
-            if roll < rarity_chances["legendary"]:
-                rarity = "legendary"
-                level_bonus = 4
-            elif roll < rarity_chances["legendary"] + rarity_chances["epic"]:
-                rarity = "epic"
-                level_bonus = 2
-            elif roll < rarity_chances["legendary"] + rarity_chances["epic"] + rarity_chances["rare"]:
-                rarity = "rare"
-                level_bonus = 1
-            else:
-                rarity = "common"
-                level_bonus = 0
-                
-            # Create monster with scaled stats
+        # Determine rarity based on tower level
+        current_rarity = "E"
+        for rarity, (min_level, max_level) in rarity_ranges.items():
+            if tower_level <= max_level:
+                current_rarity = rarity
+                break
+        
+        # Query monsters for current rarity range
+        monster_query = {
+            "monster_id": {"$regex": f"^{current_rarity}"}
+        }
+        
+        potential_monsters = list(monsters_collection.find(monster_query))
+        
+        # Randomly select monsters
+        selected_monsters = []
+        num_monsters = random.randint(3, min(len(potential_monsters), 7))
+        selected_monster_data = random.sample(potential_monsters, num_monsters)
+        
+        for monster_data in selected_monster_data:
             monster = Monster(
-                monster_id=f"MON_{datetime.utcnow().timestamp()}_{_}",
-                name=f"{rarity.title()} Tower Beast",
-                level=monster_level + level_bonus
+                monster_id=monster_data["monster_id"],
+                name=monster_data["name"],
+                level=monster_data["level"],
+                rarity=current_rarity,
+                monster_type=monster_data.get("monster_type", "generic"),
+                hp=monster_data.get("base_hp", 50),
+                damage=monster_data.get("base_damage", 5),
+                defense=monster_data.get("base_defense", 3),
+                experience_reward=monster_data.get("experience_reward", 15),
+                gold_reward=monster_data.get("gold_reward", 10),
+                loot_table=monster_data.get("loot_table", [])
             )
             
-            # Set monster stats based on level and rarity
-            rarity_multipliers = {
-                "common": 1.0,
-                "rare": 1.3,
-                "epic": 1.6,
-                "legendary": 2.0
-            }
-            
-            multiplier = rarity_multipliers[rarity]
-            
-            # Base stats calculation
-            monster.hp = int((monster_level * 50) * multiplier)
-            monster.damage = int((monster_level * 5) * multiplier)
-            monster.defense = int((monster_level * 3) * multiplier)
-            
-            # Set rewards based on level and rarity
-            monster.gold_reward = int((monster_level * 10) * multiplier)
-            monster.experience_reward = int((monster_level * 15) * multiplier)
-            monster.rarity = rarity
-            
-            monsters.append(monster)
+            selected_monsters.append(monster)
         
-        return monsters
+        return selected_monsters
     
     async def process_raid(self, player: Player, tower_level: int) -> Dict:
         monsters = await self.generate_monsters(tower_level, player.level)
         
         raid_results = {
-            "monsters_defeated": {"common": 0, "rare": 0, "epic": 0, "legendary": 0},
+            "monsters_defeated": [],
+            "monsters_defeated_by": [],
             "total_rewards": {"gold": 0, "experience": 0},
             "battles": [],
             "raid_complete": False,
-            "player_survived": True
+            "player_survived": True,
+            "damage_taken": 0
         }
         
         for monster in monsters:
             if player.current_hp <= 0:
                 raid_results["player_survived"] = False
                 break
-                
+                    
             battle_result = await self.process_battle(player, monster)
             raid_results["battles"].append(battle_result)
             
             if battle_result["player_won"]:
-                raid_results["monsters_defeated"][battle_result["monster_rarity"]] += 1
+                raid_results["monsters_defeated"].append(monster.monster_id)
                 raid_results["total_rewards"]["gold"] += battle_result["rewards"]["gold"]
                 raid_results["total_rewards"]["experience"] += battle_result["rewards"]["experience"]
             else:
-                # Player lost this battle
+                raid_results["monsters_defeated_by"].append(monster.monster_id)
                 player.current_hp -= battle_result["damage_taken"]
+                raid_results["damage_taken"] += battle_result["damage_taken"]
                 break
         
-        raid_results["raid_complete"] = raid_results["monsters_defeated"] == len(monsters)
+        raid_results["raid_complete"] = len(raid_results["monsters_defeated"]) == len(monsters)
         return raid_results
 
+
     async def process_battle(self, player: Player, monster: Monster) -> Dict:
-        """Process a single battle between player and monster"""
-        player_wins = 0
-        monster_wins = 0
-        
         player_power = self.combat_system.calculate_power_score(player, True)
         monster_power = self.combat_system.calculate_power_score(monster, False)
             
-        if player_power > monster_power:
-            player_wins += 1
-        else:
-            monster_wins += 1
-                
-        player_won = player_wins > monster_wins
+        player_wins = player_power > monster_power
         
-        # Calculate rewards and damage
         rewards = {
-            "gold": monster.gold_reward * (player_wins),
-            "experience": monster.experience_reward * (player_wins)
+            "gold": monster.gold_reward if player_wins else 0,
+            "experience": monster.experience_reward if player_wins else 0
         }
         
-        damage_taken = monster_wins * monster.damage
+        damage_taken = monster.damage if not player_wins else 0
         
         return {
-            "player_won": player_won,
+            "player_won": player_wins,
             "damage_taken": damage_taken,
             "rewards": rewards,
-            "monster_rarity": monster.rarity,
+            "monster_id": monster.monster_id
         }
 
 def handle_player_death(player: Player) -> List[Dict]:
@@ -210,63 +185,37 @@ def handle_player_death(player: Player) -> List[Dict]:
     return dropped_items
 
 def create_raid_summary(results: Dict) -> str:
-    """
-    Create a detailed summary of the raid results
-    """
-    # Organize monsters by rarity
-    monster_kills = {
-        "common": 0,
-        "rare": 0,
-        "epic": 0,
-        "legendary": 0
-    }
-
-    total_damage_taken = 0
-    for battle in results["battles"]:
-        if battle["player_won"]:
-            monster_type = battle.get("monster_rarity", "common")
-            monster_kills[monster_type] += 1
-        total_damage_taken += battle["damage_taken"]
-    
-    # Create summary text
     summary = "🗡️ **Raid Summary** 🗡️"
-
-    summary += f"\n❤️ **Health Lost:** {total_damage_taken:.0f}\n"
-    # Monster kills section
-    summary += "**Monsters Defeated:**"
-    for rarity, count in monster_kills.items():
-        if count > 0:
-            rarity_icons = {
-                "common": "⚪",
-                "rare": "🔵",
-                "epic": "🟣",
-                "legendary": "🟡"
-            }
-            summary += f"{rarity_icons[rarity]} {rarity.title()}: {count}\n"
     
-    # Rewards section
+    summary += f"\n❤️ **Health Lost:** {results['damage_taken']}\n"
+    
+    summary += "\n**Monsters Defeated:**\n"
+    for monster_id in results["monsters_defeated"]:
+        summary += f"✅ {monster_id}\n"
+    
+    if results["monsters_defeated_by"]:
+        summary += "\n**Monsters that Defeated You:**\n"
+        for monster_id in results["monsters_defeated_by"]:
+            summary += f"❌ {monster_id}\n"
+    
     summary += "\n**Rewards:**\n"
     summary += f"💰 Gold: {results['total_rewards']['gold']:.0f}\n"
     summary += f"✨ Experience: {results['total_rewards']['experience']:.0f}\n"
     
-    # Raid status
     if results["raid_complete"]:
         summary += "\n🏆 Raid Complete! 🏆"
     elif results["player_survived"]:
         summary += "\n⚠️ Raid Abandoned - Retreated safely"
     else:
         summary += "\n💀 Raid Failed - Player Defeated"
-        
-        # Add dropped items if player died
-        if "dropped_items" in results:
-            summary += "\n\n**Items Lost:**\n"
-            for item in results["dropped_items"]:
-                summary += f"❌ {item['slot'].title()}: {item['item']['name']}\n"
     
     return summary
 
 # Example usage in a Discord command
 async def handle_raid_command(player: Player, tower_level: int):
+    db = Database()
+    players_collection = db.get_players_collection()
+    
     raid_manager = RaidManager()
     results = await raid_manager.process_raid(player, tower_level)
     
@@ -275,8 +224,18 @@ async def handle_raid_command(player: Player, tower_level: int):
     player.experience += results["total_rewards"]["experience"]
     
     if not results["player_survived"]:
-        # Handle player death (drop items, return to camp, etc.)
         dropped_items = handle_player_death(player)
+        results["dropped_items"] = dropped_items
+    
+    # Update player in database
+    players_collection.update_one(
+        {"discord_id": player.discord_id}, 
+        {"$set": {
+            "current_hp": player.current_hp,
+            "gold": player.gold,
+            "experience": player.experience
+        }}
+    )
     
     # Generate raid summary
     summary = create_raid_summary(results)

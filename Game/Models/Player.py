@@ -67,6 +67,36 @@ class Player:
     def from_dict(cls, data: Dict):
         """Create a Player instance from MongoDB document"""
         player = cls(data["discord_id"], data["username"])
+        
         # Populate all fields from data
-        # ... implementation here
+        player.created_at = data.get("created_at", datetime.utcnow())
+        player.last_active = data.get("last_active", datetime.utcnow())
+        
+        player.level = data.get("level", 1)
+        player.experience = data.get("experience", 0)
+        player.gold = data.get("gold", 0)
+        
+        player.stats = data.get("stats", {
+            "strength": 10,
+            "agility": 10,
+            "intelligence": 10,
+            "vitality": 10
+        })
+        
+        player.max_hp = data.get("max_hp", 100)
+        player.current_hp = data.get("current_hp", 100)
+        
+        player.equipment = data.get("equipment", {
+            "weapon": None,
+            "armor": None,
+            "helmet": None,
+            "accessory": None
+        })
+        
+        player.inventory = data.get("inventory", [])
+        player.inventory_size = data.get("inventory_size", 20)
+        
+        player.character_class = data.get("character_class")
+        player.current_party_id = data.get("current_party_id")
+        
         return player

@@ -1,13 +1,11 @@
 import asyncio
 from Game.Models.Player import Player
 from Game.Managers.SoloCombat import handle_raid_command
+from Game.Managers.player_db_connection import get_player_by_discord_id
 
 async def main():
     # Initialize a test player
-    player = Player(
-        discord_id="test_id",
-        username="TestPlayer"
-    )
+    player = get_player_by_discord_id(0000000)
     
     # Current tower level (we can make this dynamic later)
     tower_level = 1
