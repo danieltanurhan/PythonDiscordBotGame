@@ -73,7 +73,7 @@ class TemplateCog(interactions.Extension):
             player_data = get_player_by_discord_id(discord_id).to_dict()
 
             # Create an embed with the player's information
-            embed = Embed(title=f"{player_data['username']}'s Profile", color=0x00ff00)
+            embed = Embed(title=" ", color=0x00ff00)
             
             embed.add_field(name="Level", value=str(player_data['level']), inline=True)
             embed.add_field(name="Experience", value=str(player_data['experience']), inline=True)
@@ -81,22 +81,36 @@ class TemplateCog(interactions.Extension):
             
             # Add stats
             stats = player_data['stats']
-            stats_str = "\n".join([f"{stat.capitalize()}: {value}" for stat, value in stats.items()])
-            embed.add_field(name="Stats", value=stats_str, inline=False)
-            
-            embed.add_field(name="HP", value=f"{player_data['current_hp']}/{player_data['max_hp']}", inline=True)
-            embed.add_field(name="Class", value=player_data['character_class'], inline=True)
-            
+            emoji_map = {
+                "strength": "💪",
+                "agility": "🏊",
+                "intelligence": "🧠",
+                "vitality": "🧑‍🦽"
+            }
+            stats_str = "\n".join([f"{emoji_map.get(stat, '')} {stat.capitalize()}: {value}" for stat, value in stats.items()])
+            embed.add_field(name="📋Stats", value=stats_str, inline=False)
+                       
+            embed.add_field(name="❤️ HP", value=f"{player_data['current_hp']}/{player_data['max_hp']}", inline=True)
+            embed.add_field(name="🛡️ Class", value=player_data['character_class'], inline=True)      
+
             # Add equipment
-            equipment = player_data['equipment']
-            equipment_str = "\n".join([f"{slot.capitalize()}: {item}" for slot, item in equipment.items()])
-            embed.add_field(name="Equipment", value=equipment_str, inline=False)
-            
+            equipments = player_data['equipment']
+            emoji_eq = {
+                "weapon": "⚔️",
+                "armor": "🛡️",
+                "helmet": "🪖",
+                "accessory": "💍"
+            }
+            equipment_str = "\n".join([f"{emoji_eq.get(equipment, '')} {equipment.capitalize()}: {value}" for equipment, value in equipments.items()])
+            embed.add_field(name="📦 Equipment", value=equipment_str, inline=False)
+           
             # Add tower level if it exists
             if 'tower_level' in player_data:
-                embed.add_field(name="Tower Level", value=str(player_data['tower_level']), inline=True)
+                embed.add_field(name="🏰 Tower Level", value=str(player_data['tower_level']), inline=True)
 
+            embed.set_author(name=ctx.author.display_name + "'s profile", icon_url=ctx.author.avatar_url)
             await ctx.send(embed=embed, components=buttons)
+        
 
     @interactions.slash_command(
         "raid", description="Start a raid", scopes=[DEV_GUILD] if DEV_GUILD else None
