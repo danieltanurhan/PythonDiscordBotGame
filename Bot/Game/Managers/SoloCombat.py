@@ -215,4 +215,4 @@ async def handle_raid_command(player: Player):
 async def handle_camp_command(player):
     player.current_hp = player.max_hp
     update_player_hp(player)
-    return "Healed! Current HP: " + str(player.current_hp)
+    return "💊 You're healed! 💊 Current ❤️ HP: " + str(player.current_hp)
