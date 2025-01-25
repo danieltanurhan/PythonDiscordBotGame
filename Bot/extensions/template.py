@@ -134,7 +134,8 @@ class TemplateCog(interactions.Extension):
 
         buttons = [
             interactions.Button(style=ButtonStyle.PRIMARY, label="Raid Again", custom_id="raid_again"),
-            interactions.Button(style=ButtonStyle.PRIMARY, label="Camp", custom_id="go_camp")
+            interactions.Button(style=ButtonStyle.PRIMARY, label="Camp", custom_id="go_camp"),
+            interactions.Button(style=ButtonStyle.PRIMARY, label="Profile", custom_id="go_profile")
         ]
 
         if not player:
