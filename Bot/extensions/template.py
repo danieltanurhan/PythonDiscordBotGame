@@ -117,6 +117,7 @@ class TemplateCog(interactions.Extension):
         discord_id = str(ctx.author.id)
         player = get_player_by_discord_id(discord_id)
 
+
         buttons = [
             interactions.Button(style=ButtonStyle.PRIMARY, label="Raid Again", custom_id="raid_again"),
             interactions.Button(style=ButtonStyle.PRIMARY, label="Go Camp", custom_id="go_camp")
