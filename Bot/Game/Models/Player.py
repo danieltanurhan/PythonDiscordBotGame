@@ -14,12 +14,12 @@ class Player:
         self.experience = 0
         self.gold = 0
         
-        # Base Stats
+         # Base Stats with Emojis
         self.stats = {
-            "strength": 10,
-            "agility": 10,
-            "intelligence": 10,
-            "vitality": 10
+            "💪Strength": 10,
+            "🏃Agility": 10,
+            "🧠Intelligence": 10,
+            "❤️Vitality": 10
         }
         
         # Derived Stats (calculated from base stats + equipment)
@@ -28,10 +28,10 @@ class Player:
         
         # Equipment slots
         self.equipment = {
-            "weapon": None,
-            "armor": None,
-            "helmet": None,
-            "accessory": None
+            "⚔️Weapon": None,
+            "🛡️Armor": None,
+            "🪖Helmet": None,
+            "💍Accessory": None
         }
         
         # Inventory (limited slots)
@@ -84,20 +84,20 @@ class Player:
         player.gold = data.get("gold", 0)
         
         player.stats = data.get("stats", {
-            "strength": 10,
-            "agility": 10,
-            "intelligence": 10,
-            "vitality": 10
+            "💪Strength": 10,
+            "🏃Agility": 10,
+            "🧠Intelligence": 10,
+            "❤️Vitality": 10
         })
         
         player.max_hp = data.get("max_hp", 100)
         player.current_hp = data.get("current_hp", 100)
         
         player.equipment = data.get("equipment", {
-            "weapon": None,
-            "armor": None,
-            "helmet": None,
-            "accessory": None
+            "⚔️Weapon": None,
+            "🛡️Armor": None,
+            "🪖Helmet": None,
+            "💍Accessory": None
         })
         
         player.inventory = data.get("inventory", [])
@@ -110,4 +110,4 @@ class Player:
 
         return player
     
-    
+   
