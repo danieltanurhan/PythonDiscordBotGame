@@ -88,7 +88,7 @@ class TemplateCog(interactions.Extension):
                 "vitality": "🧑‍🦽"
             }
             stats_str = "\n".join([f"{emoji_map.get(stat, '')} {stat.capitalize()}: {value}" for stat, value in stats.items()])
-            embed.add_field(name="📋Stats", value=stats_str, inline=False)
+            embed.add_field(name="Stats", value=stats_str, inline=False)
                        
             embed.add_field(name="❤️ HP", value=f"{player_data['current_hp']}/{player_data['max_hp']}", inline=True)
             embed.add_field(name="🛡️ Class", value=player_data['character_class'], inline=True)      
@@ -102,11 +102,11 @@ class TemplateCog(interactions.Extension):
                 "accessory": "💍"
             }
             equipment_str = "\n".join([f"{emoji_eq.get(equipment, '')} {equipment.capitalize()}: {value}" for equipment, value in equipments.items()])
-            embed.add_field(name="📦 Equipment", value=equipment_str, inline=False)
+            embed.add_field(name="Equipment", value=equipment_str, inline=False)
            
             # Add tower level if it exists
             if 'tower_level' in player_data:
-                embed.add_field(name="🏰 Tower Level", value=str(player_data['tower_level']), inline=True)
+                embed.add_field(name="Tower Level", value=str(player_data['tower_level']), inline=True)
 
             embed.set_author(name=ctx.author.display_name + "'s profile", icon_url=ctx.author.avatar_url)
             await ctx.send(embed=embed, components=buttons)
@@ -213,8 +213,8 @@ class TemplateCog(interactions.Extension):
         await handle_gypsy_debuff(player)
 
         embed = Embed(
-                title="Gypsy Buff Applied!",
-                description="Gypsy BUFF applied! Good luck out there my car loving golden friend!",
+                title="🦹‍♂️Gypsy Buff Applied!🦹‍♂️",
+                description="🦹‍♂️Gypsy BUFF applied!🦹‍♂️ Good luck out there my car loving golden friend!",
                 color=0x00ff00
             )
 
