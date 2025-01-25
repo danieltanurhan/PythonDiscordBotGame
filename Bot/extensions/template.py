@@ -131,14 +131,14 @@ class TemplateCog(interactions.Extension):
             await ctx.send("You cannot raid while defeated! Use /camp to heal first.")
         else:
             raid_summary = await handle_raid_command(player)
-
+           
             # Create an embed with the raid results
-            embed = Embed(
+            embed = Embed(            
                 title="Raid Results",
                 description=raid_summary,
                 color=0x00ff00
             )
-
+            embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed, components=buttons)
 
 
