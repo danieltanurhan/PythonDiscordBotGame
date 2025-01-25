@@ -1,56 +1,98 @@
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
+import discord
 
 class Player:
     def __init__(self, discord_id: str, username: str):
-        # Basic Info - maps to MongoDB documents
-        self.discord_id = discord_id  # Unique identifier
+        self.discord_id = discord_id
         self.username = username
         self.created_at = datetime.utcnow()
         self.last_active = datetime.utcnow()
         
         # Character Stats
+        self.stats = {
+            "strength": 10,
+            "agility": 10,
+            "intelligence": 10,
+            "vitality": 10
+        }
+        
+        # Derived Stats
         self.level = 1
         self.experience = 0
         self.gold = 0
-        
-         # Base Stats with Emojis
-        self.stats = {
-            "💪Strength": 10,
-            "🏃Agility": 10,
-            "🧠Intelligence": 10,
-            "❤️Vitality": 10
-        }
-        
-        # Derived Stats (calculated from base stats + equipment)
         self.max_hp = 100
         self.current_hp = 100
         
         # Equipment slots
         self.equipment = {
-            "⚔️Weapon": None,
-            "🛡️Armor": None,
-            "🪖Helmet": None,
-            "💍Accessory": None
+            "Weapon": None,
+            "Armor": None,
+            "Helmet": None,
+            "Accessory": None
         }
         
-        # Inventory (limited slots)
         self.inventory = []
         self.inventory_size = 20
-        
-        # Class type
-        self.character_class = None  # Tank, DPS, Healer, etc.
-        
-        # Party info
+        self.character_class = None
         self.current_party_id = None
-
-        #Guild info
         self.guild_id = None
-
         self.tower_level = 1
 
+    def create_stats_embed(self) -> discord.Embed:
+        """Create an embed displaying player stats with emojis"""
+        embed = discord.Embed(
+            title=f"{self.username}'s Stats",
+            color=discord.Color.blue()
+        )
+        
+        # Stats section
+        stats_value = (
+            f"💪 Strength: {self.stats['strength']}\n"
+            f"🏃 Agility: {self.stats['agility']}\n"
+            f"🧠 Intelligence: {self.stats['intelligence']}\n"
+            f"❤️ Vitality: {self.stats['vitality']}"
+        )
+        embed.add_field(name="Base Stats", value=stats_value, inline=False)
+        
+        # Character Info section
+        char_info = (
+            f"📊 Level: {self.level}\n"
+            f"💰 Gold: {self.gold}\n"
+            f"✨ Experience: {self.experience}\n"
+            f"🏰 Tower Level: {self.tower_level}"
+        )
+        embed.add_field(name="Character Info", value=char_info, inline=False)
+        
+        # HP section
+        embed.add_field(
+            name="Health", 
+            value=f"❤️ {self.current_hp}/{self.max_hp}", 
+            inline=False
+        )
+        
+        return embed
+
+    def create_equipment_embed(self) -> discord.Embed:
+        """Create an embed displaying player equipment with emojis"""
+        embed = discord.Embed(
+            title=f"{self.username}'s Equipment",
+            color=discord.Color.green()
+        )
+        
+        # Equipment section
+        equipment_value = (
+            f"⚔️ Weapon: {self.equipment['Weapon'] or 'None'}\n"
+            f"🛡️ Armor: {self.equipment['Armor'] or 'None'}\n"
+            f"🪖 Helmet: {self.equipment['Helmet'] or 'None'}\n"
+            f"💍 Accessory: {self.equipment['Accessory'] or 'None'}"
+        )
+        embed.add_field(name="Equipped Items", value=equipment_value, inline=False)
+        
+        return embed
+
     def to_dict(self) -> Dict:
-        """Convert player data to dictionary for MongoDB storage"""
+        """Convert player data to dictionary"""
         return {
             "discord_id": self.discord_id,
             "username": self.username,
@@ -72,10 +114,9 @@ class Player:
 
     @classmethod
     def from_dict(cls, data: Dict):
-        """Create a Player instance from MongoDB document"""
+        """Create a Player instance from dictionary"""
         player = cls(data["discord_id"], data["username"])
         
-        # Populate all fields from data
         player.created_at = data.get("created_at", datetime.utcnow())
         player.last_active = data.get("last_active", datetime.utcnow())
         
@@ -84,20 +125,20 @@ class Player:
         player.gold = data.get("gold", 0)
         
         player.stats = data.get("stats", {
-            "💪Strength": 10,
-            "🏃Agility": 10,
-            "🧠Intelligence": 10,
-            "❤️Vitality": 10
+            "strength": 10,
+            "agility": 10,
+            "intelligence": 10,
+            "vitality": 10
         })
         
         player.max_hp = data.get("max_hp", 100)
         player.current_hp = data.get("current_hp", 100)
         
         player.equipment = data.get("equipment", {
-            "⚔️Weapon": None,
-            "🛡️Armor": None,
-            "🪖Helmet": None,
-            "💍Accessory": None
+            "Weapon": None,
+            "Armor": None,
+            "Helmet": None,
+            "Accessory": None
         })
         
         player.inventory = data.get("inventory", [])
@@ -110,4 +151,3 @@ class Player:
 
         return player
     
-   
