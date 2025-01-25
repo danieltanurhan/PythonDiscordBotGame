@@ -130,11 +130,11 @@ class RaidManager:
             raid_results["battles"].append(battle_result)
             
             if battle_result["player_won"]:
-                raid_results["monsters_defeated"].append(monster.monster_id)
+                raid_results["monsters_defeated"].append(monster.name)
                 raid_results["total_rewards"]["gold"] += battle_result["rewards"]["gold"]
                 raid_results["total_rewards"]["experience"] += battle_result["rewards"]["experience"]
             else:
-                raid_results["monsters_defeated_by"].append(monster.monster_id)
+                raid_results["monsters_defeated_by"].append(monster.name)
                 player.current_hp -= battle_result["damage_taken"]
                 raid_results["damage_taken"] += battle_result["damage_taken"]
                 if raid_results["player_survived"] <= False:
@@ -163,7 +163,7 @@ class RaidManager:
             "player_won": player_wins,
             "damage_taken": damage_taken,
             "rewards": rewards,
-            "monster_id": monster.monster_id
+            "monster_name": monster.name
         }
 
 def create_raid_summary(results: Dict) -> str:
