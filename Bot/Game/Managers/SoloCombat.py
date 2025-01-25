@@ -16,8 +16,8 @@ class CombatSystem:
         
         if is_player:
             # Base stats contribution
-            base_score += entity.stats["strength"] * 1.5
-            base_score += entity.stats["agility"] * 1.2
+            base_score += entity.stats["strength"] * 1.0
+            base_score += entity.stats["agility"] * 1.0
             base_score += entity.stats["vitality"] * 1.0
             base_score += entity.level * 5
             
@@ -58,26 +58,14 @@ class RaidManager:
         db = Database()
         monsters_collection = db.get_monsters_collection()
         
-        # Define monster ranges by rarity
-        rarity_ranges = {
-            "E": (1, 10),   # Easiest monsters
-            "D": (11, 20),  # Next difficulty tier
-            "C": (21, 30),
-            "B": (31, 40),
-            "A": (41, 50),
-            "S": (51, 60)   # Hardest monsters
-        }
-        
-        # Determine rarity based on tower level
-        current_rarity = "E"
-        for rarity, (min_level, max_level) in rarity_ranges.items():
-            if tower_level <= max_level:
-                current_rarity = rarity
-                break
-        
-        # Query monsters for current rarity range
+
+        # Calculate level range for monsters
+        min_monster_level = max(1, player_level - 2)
+        max_monster_level = player_level + 2
+
+        # Query monsters within the player's level range
         monster_query = {
-            "monster_id": {"$regex": f"^{current_rarity}"}
+            "level": {"$gte": min_monster_level, "$lte": max_monster_level}
         }
         
         potential_monsters = list(monsters_collection.find(monster_query))
@@ -92,7 +80,7 @@ class RaidManager:
                 monster_id=monster_data["monster_id"],
                 name=monster_data["name"],
                 level=monster_data["level"],
-                rarity=current_rarity,
+                rarity=monster_data["rarity"],
                 monster_type=monster_data.get("monster_type", "generic"),
                 hp=monster_data.get("hp", 50),
                 damage=monster_data.get("damage", 5),
