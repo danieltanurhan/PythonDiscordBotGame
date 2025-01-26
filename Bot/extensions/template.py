@@ -13,9 +13,6 @@ from config import DEV_GUILD
 from src import logutil
 import random
 
-import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from Game.Managers.SoloCombat import handle_raid_command, handle_camp_command
 from Game.Managers.player_db_connection import get_player_by_discord_id, add_player, player_exists, handle_gypsy_debuff
 
@@ -40,7 +37,8 @@ class TemplateCog(interactions.Extension):
 
         buttons = [
             interactions.Button(style=ButtonStyle.PRIMARY, label="Go Camp", custom_id="go_camp"),
-            interactions.Button(style=ButtonStyle.PRIMARY, label="Raid", custom_id="raid_again")
+            interactions.Button(style=ButtonStyle.PRIMARY, label="Raid", custom_id="raid_again"),
+            interactions.Button(style=ButtonStyle.PRIMARY, label="Shop", custom_id="shop_button")
         ]
 
         if not player_exists(discord_id):
@@ -335,3 +333,4 @@ class TemplateCog(interactions.Extension):
             ace_count -= 1
 
         return value
+    

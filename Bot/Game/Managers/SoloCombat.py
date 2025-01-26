@@ -6,8 +6,6 @@ from Game.Models.Player import Player
 from Game.Database.database import Database
 from Game.Managers.player_db_connection import handle_player_death, update_player_rewards, update_player_hp
 
-
-
 class CombatSystem:
     @staticmethod
     def calculate_power_score(entity: Player | Monster, is_player: bool = True) -> float:
@@ -22,10 +20,7 @@ class CombatSystem:
             base_score += entity.level * 5
             
             # Equipment bonus (we can expand this later)
-            equipment_bonus = 0
-            for item in entity.equipment.values():
-                if item:
-                    equipment_bonus += item.get('power', 0)
+            equipment_bonus = entity.calculate_equipment_power()
             base_score += equipment_bonus
         else:
             # Monster power calculation
