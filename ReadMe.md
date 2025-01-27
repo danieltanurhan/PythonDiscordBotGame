@@ -8,7 +8,7 @@ Dungeon Tower is a Discord-based game where players collaborate to hunt monsters
 dungeon_tower/
 │
 ├── main.py                  # Main bot entry point
-├── config.py                # Configuration settings (database, Discord tokens, etc.)
+├── config.py                # Configuration settings (database, Discord tokens, etc.) 
 ├── requirements.txt         # Project dependencies
 │
 ├── game/
