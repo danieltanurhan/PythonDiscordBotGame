@@ -13,9 +13,6 @@ from config import DEV_GUILD
 from src import logutil
 import random
 
-import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from Game.Managers.SoloCombat import handle_raid_command, handle_camp_command
 from Game.Managers.player_db_connection import get_player_by_discord_id, add_player, player_exists, handle_gypsy_debuff
 
@@ -40,7 +37,8 @@ class TemplateCog(interactions.Extension):
 
         buttons = [
             interactions.Button(style=ButtonStyle.PRIMARY, label="Go Camp", custom_id="go_camp"),
-            interactions.Button(style=ButtonStyle.PRIMARY, label="Raid", custom_id="raid_again")
+            interactions.Button(style=ButtonStyle.PRIMARY, label="Raid", custom_id="raid_again"),
+            interactions.Button(style=ButtonStyle.PRIMARY, label="Shop", custom_id="shop_button")
         ]
 
         if not player_exists(discord_id):
@@ -101,7 +99,26 @@ class TemplateCog(interactions.Extension):
                 "helmet": "🪖",
                 "accessory": "💍"
             }
-            equipment_str = "\n".join([f"{emoji_eq.get(equipment, '')} {equipment.capitalize()}: {value}" for equipment, value in equipments.items()])
+
+            equipment_str = ""
+            for slot, item in equipments.items():
+                if item:  # If there's an item in the slot
+                    emoji = emoji_eq.get(slot.lower(), '')
+                    name = item.get('name', 'None')
+                    level = item.get('level', 0)
+                    level_str = f"(Lvl {level})" if level > 0 else ""
+                    
+                    equipment_str += f"{emoji} {slot.capitalize()}: {name} {level_str}\n"
+                else:
+                    equipment_str += f"{emoji_eq.get(slot.lower(), '')} {slot.capitalize()}: None\n"
+
+            # Remove trailing newline
+            equipment_str = equipment_str.rstrip()
+
+            # If no equipment is found, show a default message
+            if not equipment_str:
+                equipment_str = "No equipment"
+
             embed.add_field(name="Equipment", value=equipment_str, inline=False)
            
             # Add tower level if it exists
@@ -134,7 +151,8 @@ class TemplateCog(interactions.Extension):
 
         buttons = [
             interactions.Button(style=ButtonStyle.PRIMARY, label="Raid Again", custom_id="raid_again"),
-            interactions.Button(style=ButtonStyle.PRIMARY, label="Camp", custom_id="go_camp")
+            interactions.Button(style=ButtonStyle.PRIMARY, label="Camp", custom_id="go_camp"),
+            interactions.Button(style=ButtonStyle.PRIMARY, label="Profile", custom_id="go_profile")
         ]
 
         if not player:
@@ -334,3 +352,4 @@ class TemplateCog(interactions.Extension):
             ace_count -= 1
 
         return value
+    

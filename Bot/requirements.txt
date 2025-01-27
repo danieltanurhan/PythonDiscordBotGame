@@ -1,6 +1,3 @@
-python -m venv venv
-venv\Scripts\activate
-
 discord.py
 discord-py-interactions
 pymongo

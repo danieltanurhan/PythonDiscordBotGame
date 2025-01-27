@@ -21,6 +21,8 @@ async def add_player(discord_id: str, username: str):
     
     # Create new player
     new_player = Player(discord_id, username)
+
+    print(new_player.to_dict())
     
     # Insert player into database
     players_collection.insert_one(new_player.to_dict())

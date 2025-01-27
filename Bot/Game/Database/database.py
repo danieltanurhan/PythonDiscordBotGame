@@ -24,6 +24,9 @@ class Database:
 
     def get_players_collection(self):
         return self.db['players']
+    
+    def get_guilds_collection(self):
+        return self.db['guilds']
 
-# Optional: Create .env file in project root
-# MONGODB_CONNECTION_STRING=your_actual_connection_string
+    def get_equipment_collection(self):
+        return self.db['equipment']
