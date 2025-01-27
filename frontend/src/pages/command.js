@@ -1,7 +1,18 @@
-import React from "react";
+import React, { useState } from "react";
 import styles from "../styles/pageStyles/Command.module.css";
 
 const Commands = () => {
+  const [copyClipboard, setCopyClipboard] = useState();
+
+  const handleClick = async (text) => {
+    try {
+      setCopyClipboard(text);
+      await navigator.clipboard.writeText(text);
+    } catch {
+      console.log("Something didn't work right");
+    }
+  };
+
   const commandData = [
     {
       title: "Basic Commands",
@@ -144,10 +155,13 @@ const Commands = () => {
       <div className={styles.command_wrapper}>
         {commandData.map((section) => (
           <div>
-            <h2>{section.title}</h2>
+            <h2 key={section.title}>{section.title}</h2>
             {section.commands.map((action) => (
-              <p>
-                <span>{action.name}</span> - {action.description}
+              <p key={action.name}>
+                <span onClick={() => handleClick(action.name)}>
+                  {action.name}
+                </span>{" "}
+                - {action.description}
               </p>
             ))}
           </div>
