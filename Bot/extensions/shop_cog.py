@@ -11,8 +11,11 @@ from config import DEV_GUILD
 # from bot_support import Pagination
 from interactions.ext.paginators import Page, Paginator
 from Game.Managers.equipment_db_connection import get_equipment_by_type
+
 # Other necessary imports
 back_button = interactions.Button(style=ButtonStyle.SECONDARY, label="Back", custom_id="shop_button")
+return_button = interactions.Button(style=ButtonStyle.SECONDARY, label="Return", custom_id="go_profile")
+
 wu1_button = interactions.Button(style=ButtonStyle.PRIMARY, label="Buy First Upgrade", custom_id="weapon_upgrade_1")
 wu2_button = interactions.Button(style=ButtonStyle.PRIMARY, label="Buy Second Upgrade", custom_id="weapon_upgrade_2")
 wu3_button = interactions.Button(style=ButtonStyle.PRIMARY, label="Buy Third Upgrade", custom_id="weapon_upgrade_3")
@@ -74,6 +77,23 @@ class ShopCog(interactions.Extension):
             interactions.Button(style=ButtonStyle.PRIMARY, label="Armor", custom_id="shop_armor"),
         ]
 
+        component = [
+            interactions.ActionRow(buttons[0], buttons[1]),
+            interactions.ActionRow(return_button)
+            ]
+        #  paginator.custom_buttons = [
+        #     interactions.ActionRow(
+        #             back_button
+        #         ), 
+        #         interactions.ActionRow(
+        #             au1_button, au2_button, au3_button
+        #         ), 
+        #         interactions.ActionRow(
+        #             au4_button
+        #         )
+        #     ]
+
+
         embed = Embed(
             title="Select a category to browse items",
             description="/shop weapons",
@@ -81,7 +101,7 @@ class ShopCog(interactions.Extension):
         )
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
 
-        await ctx.send(embed=embed, components=buttons)
+        await ctx.send(embed=embed, components=component)
 
     @interactions.subcommand(description="View weapons in the shop", base="shop")
     async def weapons(self, ctx: SlashContext):

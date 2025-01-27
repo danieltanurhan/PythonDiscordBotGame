@@ -99,7 +99,26 @@ class TemplateCog(interactions.Extension):
                 "helmet": "🪖",
                 "accessory": "💍"
             }
-            equipment_str = "\n".join([f"{emoji_eq.get(equipment, '')} {equipment.capitalize()}: {value}" for equipment, value in equipments.items()])
+
+            equipment_str = ""
+            for slot, item in equipments.items():
+                if item:  # If there's an item in the slot
+                    emoji = emoji_eq.get(slot.lower(), '')
+                    name = item.get('name', 'None')
+                    level = item.get('level', 0)
+                    level_str = f"(Lvl {level})" if level > 0 else ""
+                    
+                    equipment_str += f"{emoji} {slot.capitalize()}: {name} {level_str}\n"
+                else:
+                    equipment_str += f"{emoji_eq.get(slot.lower(), '')} {slot.capitalize()}: None\n"
+
+            # Remove trailing newline
+            equipment_str = equipment_str.rstrip()
+
+            # If no equipment is found, show a default message
+            if not equipment_str:
+                equipment_str = "No equipment"
+
             embed.add_field(name="Equipment", value=equipment_str, inline=False)
            
             # Add tower level if it exists
