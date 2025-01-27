@@ -3,11 +3,16 @@ import styles from "../styles/pageStyles/Command.module.css";
 
 const Commands = () => {
   const [copyClipboard, setCopyClipboard] = useState();
+  const [active, setActive] = useState(false);
 
   const handleClick = async (text) => {
     try {
       setCopyClipboard(text);
       await navigator.clipboard.writeText(text);
+      setActive(true);
+      setTimeout(() => {
+        setActive(false);
+      }, 1000);
     } catch {
       console.log("Something didn't work right");
     }
@@ -152,6 +157,13 @@ const Commands = () => {
 
   return (
     <section className={styles.command_section}>
+      <div
+        className={`${styles.toast} ${
+          active ? styles.active : styles.hide
+        }`}
+      >
+        Copied!
+      </div>
       <div className={styles.command_wrapper}>
         {commandData.map((section) => (
           <div>

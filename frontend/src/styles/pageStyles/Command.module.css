@@ -6,6 +6,33 @@
   color: #333;
   font-family: "Arial", sans-serif;
   line-height: 1.6;
+  position: relative;
+}
+
+.toast {
+  position: fixed;
+  top: 2%;
+  left: 50%;
+  background-color: rgb(33, 163, 33);
+  width: 100px;
+  height: 30px;
+  color: #fff;
+  text-align: center;
+  font-size: 1.2rem;
+  border-radius: 5px;
+  transform: translate(-50%, -100px);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.toast.active {
+  transform: translate(-50%, 0px);
+  opacity: 1;
+}
+
+.toast.hide {
+  transform: translate(-50%, -100px);
+  opacity: 0;
 }
 
 .command_wrapper {
