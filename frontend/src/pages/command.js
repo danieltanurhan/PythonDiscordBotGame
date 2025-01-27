@@ -1,4 +1,5 @@
 import React from "react";
+import styles from "../styles/pageStyles/Command.module.css";
 
 const Commands = () => {
   const commandData = [
@@ -139,18 +140,20 @@ const Commands = () => {
   ];
 
   return (
-    <div>
-      {commandData.map((section) => (
-        <div>
-          <h2>{section.title}</h2>
-          {section.commands.map((action) => (
-            <p>
-              <span>{action.name}</span> - {action.description}
-            </p>
-          ))}
-        </div>
-      ))}
-    </div>
+    <section className={styles.command_section}>
+      <div className={styles.command_wrapper}>
+        {commandData.map((section) => (
+          <div>
+            <h2>{section.title}</h2>
+            {section.commands.map((action) => (
+              <p>
+                <span>{action.name}</span> - {action.description}
+              </p>
+            ))}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 };
 
