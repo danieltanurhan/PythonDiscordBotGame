@@ -5,6 +5,7 @@ const leaderboard = () => {
   return (
     <div>
       <h1 className={styles.h1}>Leaderboard</h1>
+      <h1 className={styles.h1}>Updated leaderboard</h1>
     </div>
   );
 };
