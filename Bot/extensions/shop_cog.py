@@ -31,6 +31,20 @@ au4_button = interactions.Button(style=ButtonStyle.PRIMARY, label="Buy Fourth Up
 
 au_buttons = [au1_button, au2_button, au3_button, au4_button]
 
+hu1_button = interactions.Button(style=ButtonStyle.PRIMARY, label="Buy First Upgrade", custom_id="helmet_upgrade_1")
+hu2_button = interactions.Button(style=ButtonStyle.PRIMARY, label="Buy Second Upgrade", custom_id="helmet_upgrade_2")
+hu3_button = interactions.Button(style=ButtonStyle.PRIMARY, label="Buy Third Upgrade", custom_id="helmet_upgrade_3")
+hu4_button = interactions.Button(style=ButtonStyle.PRIMARY, label="Buy Fourth Upgrade", custom_id="helmet_upgrade_4")
+
+hu_buttons = [hu1_button, hu2_button, hu3_button, hu4_button]
+
+acc1_button = interactions.Button(style=ButtonStyle.PRIMARY, label="Buy First Upgrade", custom_id="accessory_upgrade_1")
+acc2_button = interactions.Button(style=ButtonStyle.PRIMARY, label="Buy Second Upgrade", custom_id="accessory_upgrade_2")
+acc3_button = interactions.Button(style=ButtonStyle.PRIMARY, label="Buy Third Upgrade", custom_id="accessory_upgrade_3")
+acc4_button = interactions.Button(style=ButtonStyle.PRIMARY, label="Buy Fourth Upgrade", custom_id="accessory_upgrade_4")
+
+acc_buttons = [acc1_button, acc2_button, acc3_button, acc4_button]
+
 
 class CustomPaginator(Paginator):
     # custom_buttons = None
@@ -76,10 +90,12 @@ class ShopCog(interactions.Extension):
         buttons = [
             interactions.Button(style=ButtonStyle.PRIMARY, label="Weapons", custom_id="shop_weapons"),
             interactions.Button(style=ButtonStyle.PRIMARY, label="Armor", custom_id="shop_armor"),
+            interactions.Button(style=ButtonStyle.PRIMARY, label="Helmets", custom_id="shop_helmets"),
+            interactions.Button(style=ButtonStyle.PRIMARY, label="Accessories", custom_id="shop_accessories")
         ]
 
         component = [
-            interactions.ActionRow(buttons[0], buttons[1]),
+            interactions.ActionRow(buttons[0], buttons[1], buttons[2], buttons[3]),
             interactions.ActionRow(return_button)
             ]
 
@@ -262,6 +278,174 @@ class ShopCog(interactions.Extension):
         await ctx.send(**paginator.to_dict())
         paginator._author_id = ctx.author.id
 
+    @interactions.subcommand(description="View helmets in the shop", base="shop")
+    async def helmets(self, ctx: SlashContext):
+        await self.display_helmets_shop(ctx)
+
+    @interactions.component_callback("shop_helmets")
+    async def shop_helmets_callback(self, ctx: interactions.ComponentContext):
+        await self.display_helmets_shop(ctx)
+
+    async def display_helmets_shop(self, ctx: interactions.ComponentContext):
+        helmets = get_equipment_by_type("Helmet")
+        player = get_player_by_discord_id(str(ctx.author.id))
+        
+        sorted_helmets = sorted(helmets, key=lambda x: x['level'])
+        embeds = []
+        for i in range(0, len(sorted_helmets), 3):
+            embed = Embed(title="Helmets Shop", color=0x00ff00)
+            
+            for helmet in sorted_helmets[i:i+3]:
+                is_equipped = player.has_equipped(helmet['id'])
+                is_owned = player.has_equipment(helmet['id'])
+                can_afford = player.can_afford(helmet['price'])
+                meets_level = player.can_equip(helmet['level'])
+                
+                name = helmet['name']
+                description = helmet.get('description', 'No description available.')
+                
+                if is_equipped:
+                    item_info = f"{name} - EQUIPPED\n{description}"
+                elif is_owned:
+                    item_info = f"{name} - OWNED\n{description}"
+                else:
+                    level_req = f"(Lvl {helmet['level']})"
+                    price = f"{helmet['price']} gold"
+                    requirements = []
+                    if not meets_level:
+                        requirements.append("🔒 Level too low")
+                    if not can_afford:
+                        requirements.append("❌ Cannot afford")
+                    req_text = " - " + ", ".join(requirements) if requirements else ""
+                    item_info = f"{name} {level_req} | {price}\n{description}{req_text}"
+                
+                embed.add_field(name="\u200b", value=item_info, inline=False)
+            
+            embeds.append(embed)
+
+        # Update button states based on first page items
+        for i, helmet in enumerate(sorted_helmets[:4]):
+            button = hu_buttons[i]
+            is_equipped = player.has_equipped(helmet['id'])
+            is_owned = player.has_equipment(helmet['id'])
+            can_afford = player.can_afford(helmet['price'])
+            meets_level = player.can_equip(helmet['level'])
+            
+            button.disabled = is_equipped or (not is_owned and (not can_afford or not meets_level))
+            if is_equipped:
+                button.style = ButtonStyle.SUCCESS
+                button.label = "Equipped"
+            elif is_owned:
+                button.style = ButtonStyle.SUCCESS
+                button.label = "Equip"
+            else:
+                button.style = ButtonStyle.PRIMARY
+                button.label = f"${helmet['price']}"
+
+        paginator = CustomPaginator.create_from_embeds(self.bot, *embeds)
+        paginator.custom_buttons = [
+            interactions.ActionRow(
+                    back_button
+                ), 
+                interactions.ActionRow(
+                    hu1_button, hu2_button, hu3_button
+                ), 
+                interactions.ActionRow(
+                    hu4_button
+                )
+            ]
+        paginator.show_first_button = False
+        paginator.show_last_button = False
+
+        self.current_paginator = paginator
+        
+        await ctx.send(**paginator.to_dict())
+        paginator._author_id = ctx.author.id
+
+    @interactions.subcommand(description="View accessories in the shop", base="shop")
+    async def accessories(self, ctx: SlashContext):
+        await self.display_accessories_shop(ctx)
+
+    @interactions.component_callback("shop_accessories")
+    async def shop_accessories_callback(self, ctx: interactions.ComponentContext):
+        await self.display_accessories_shop(ctx)
+
+    async def display_accessories_shop(self, ctx: interactions.ComponentContext):
+        accessories = get_equipment_by_type("Accessory")
+        player = get_player_by_discord_id(str(ctx.author.id))
+        
+        sorted_accessories = sorted(accessories, key=lambda x: x['level'])
+        embeds = []
+        for i in range(0, len(sorted_accessories), 3):
+            embed = Embed(title="Accessories Shop", color=0x00ff00)
+            
+            for accessory in sorted_accessories[i:i+3]:
+                is_equipped = player.has_equipped(accessory['id'])
+                is_owned = player.has_equipment(accessory['id'])
+                can_afford = player.can_afford(accessory['price'])
+                meets_level = player.can_equip(accessory['level'])
+                
+                name = accessory['name']
+                description = accessory.get('description', 'No description available.')
+                
+                if is_equipped:
+                    item_info = f"{name} - EQUIPPED\n{description}"
+                elif is_owned:
+                    item_info = f"{name} - OWNED\n{description}"
+                else:
+                    level_req = f"(Lvl {accessory['level']})"
+                    price = f"{accessory['price']} gold"
+                    requirements = []
+                    if not meets_level:
+                        requirements.append("🔒 Level too low")
+                    if not can_afford:
+                        requirements.append("❌ Cannot afford")
+                    req_text = " - " + ", ".join(requirements) if requirements else ""
+                    item_info = f"{name} {level_req} | {price}\n{description}{req_text}"
+                
+                embed.add_field(name="\u200b", value=item_info, inline=False)
+            
+            embeds.append(embed)
+
+        # Update button states based on first page items
+        for i, accessory in enumerate(sorted_accessories[:4]):
+            button = acc_buttons[i]
+            is_equipped = player.has_equipped(accessory['id'])
+            is_owned = player.has_equipment(accessory['id'])
+            can_afford = player.can_afford(accessory['price'])
+            meets_level = player.can_equip(accessory['level'])
+            
+            button.disabled = is_equipped or (not is_owned and (not can_afford or not meets_level))
+            if is_equipped:
+                button.style = ButtonStyle.SUCCESS
+                button.label = "Equipped"
+            elif is_owned:
+                button.style = ButtonStyle.SUCCESS
+                button.label = "Equip"
+            else:
+                button.style = ButtonStyle.PRIMARY
+                button.label = f"${accessory['price']}"
+
+        paginator = CustomPaginator.create_from_embeds(self.bot, *embeds)
+        paginator.custom_buttons = [
+            interactions.ActionRow(
+                    back_button
+                ), 
+                interactions.ActionRow(
+                    acc1_button, acc2_button, acc3_button
+                ), 
+                interactions.ActionRow(
+                    acc4_button
+                )
+            ]
+        paginator.show_first_button = False
+        paginator.show_last_button = False
+
+        self.current_paginator = paginator
+        
+        await ctx.send(**paginator.to_dict())
+        paginator._author_id = ctx.author.id
+
     @interactions.component_callback("weapon_upgrade_1")
     async def weapon_upgrade_1_callback(self, ctx: interactions.ComponentContext):
         player = get_player_by_discord_id(str(ctx.author.id))
@@ -417,3 +601,139 @@ class ShopCog(interactions.Extension):
 
         # Refresh the shop display
         await self.display_armor_shop(ctx)
+
+    @interactions.component_callback("helmet_upgrade_1")
+    async def helmet_upgrade_1_callback(self, ctx: interactions.ComponentContext):
+        player = get_player_by_discord_id(str(ctx.author.id))
+        helmets = get_equipment_by_type("Helmet")
+        helmet = sorted(helmets, key=lambda x: x['level'])[0]
+
+        if player.has_equipment(helmet['id']):
+            update_player_equipment(player, helmet['id'], "Helmet")
+            await ctx.send(f"Successfully equipped {helmet['name']}!")
+        else:
+            if update_player_purchase(player, helmet['id'], helmet['price'], "Helmet"):
+                await ctx.send(f"Successfully purchased and equipped {helmet['name']}!")
+            else:
+                await ctx.send("Purchase failed! Check your gold and requirements.")
+
+        await self.display_helmets_shop(ctx)
+
+    @interactions.component_callback("helmet_upgrade_2")
+    async def helmet_upgrade_2_callback(self, ctx: interactions.ComponentContext):
+        player = get_player_by_discord_id(str(ctx.author.id))
+        helmets = get_equipment_by_type("Helmet")
+        helmet = sorted(helmets, key=lambda x: x['level'])[1]  # Second helmet
+
+        if player.has_equipment(helmet['id']):
+            update_player_equipment(player, helmet['id'], "Helmet")
+            await ctx.send(f"Successfully equipped {helmet['name']}!")
+        else:
+            if update_player_purchase(player, helmet['id'], helmet['price'], "Helmet"):
+                await ctx.send(f"Successfully purchased and equipped {helmet['name']}!")
+            else:
+                await ctx.send("Purchase failed! Check your gold and requirements.")
+
+        await self.display_helmets_shop(ctx)
+
+    @interactions.component_callback("helmet_upgrade_3")
+    async def helmet_upgrade_3_callback(self, ctx: interactions.ComponentContext):
+        player = get_player_by_discord_id(str(ctx.author.id))
+        helmets = get_equipment_by_type("Helmet")
+        helmet = sorted(helmets, key=lambda x: x['level'])[2]  # Third helmet
+
+        if player.has_equipment(helmet['id']):
+            update_player_equipment(player, helmet['id'], "Helmet")
+            await ctx.send(f"Successfully equipped {helmet['name']}!")
+        else:
+            if update_player_purchase(player, helmet['id'], helmet['price'], "Helmet"):
+                await ctx.send(f"Successfully purchased and equipped {helmet['name']}!")
+            else:
+                await ctx.send("Purchase failed! Check your gold and requirements.")
+
+        await self.display_helmets_shop(ctx)
+
+    @interactions.component_callback("helmet_upgrade_4")
+    async def helmet_upgrade_4_callback(self, ctx: interactions.ComponentContext):
+        player = get_player_by_discord_id(str(ctx.author.id))
+        helmets = get_equipment_by_type("Helmet")
+        helmet = sorted(helmets, key=lambda x: x['level'])[3]  # Fourth helmet
+
+        if player.has_equipment(helmet['id']):
+            update_player_equipment(player, helmet['id'], "Helmet")
+            await ctx.send(f"Successfully equipped {helmet['name']}!")
+        else:
+            if update_player_purchase(player, helmet['id'], helmet['price'], "Helmet"):
+                await ctx.send(f"Successfully purchased and equipped {helmet['name']}!")
+            else:
+                await ctx.send("Purchase failed! Check your gold and requirements.")
+
+        await self.display_helmets_shop(ctx)
+
+    @interactions.component_callback("accessory_upgrade_1")
+    async def accessory_upgrade_1_callback(self, ctx: interactions.ComponentContext):
+        player = get_player_by_discord_id(str(ctx.author.id))
+        accessories = get_equipment_by_type("Accessory")
+        accessory = sorted(accessories, key=lambda x: x['level'])[0]
+
+        if player.has_equipment(accessory['id']):
+            update_player_equipment(player, accessory['id'], "Accessory")
+            await ctx.send(f"Successfully equipped {accessory['name']}!")
+        else:
+            if update_player_purchase(player, accessory['id'], accessory['price'], "Accessory"):
+                await ctx.send(f"Successfully purchased and equipped {accessory['name']}!")
+            else:
+                await ctx.send("Purchase failed! Check your gold and requirements.")
+
+        await self.display_accessories_shop(ctx)
+
+    @interactions.component_callback("accessory_upgrade_2")
+    async def accessory_upgrade_2_callback(self, ctx: interactions.ComponentContext):
+        player = get_player_by_discord_id(str(ctx.author.id))
+        accessories = get_equipment_by_type("Accessory")
+        accessory = sorted(accessories, key=lambda x: x['level'])[1]  # Second accessory
+
+        if player.has_equipment(accessory['id']):
+            update_player_equipment(player, accessory['id'], "Accessory")
+            await ctx.send(f"Successfully equipped {accessory['name']}!")
+        else:
+            if update_player_purchase(player, accessory['id'], accessory['price'], "Accessory"):
+                await ctx.send(f"Successfully purchased and equipped {accessory['name']}!")
+            else:
+                await ctx.send("Purchase failed! Check your gold and requirements.")
+
+        await self.display_accessories_shop(ctx)
+
+    @interactions.component_callback("accessory_upgrade_3")
+    async def accessory_upgrade_3_callback(self, ctx: interactions.ComponentContext):
+        player = get_player_by_discord_id(str(ctx.author.id))
+        accessories = get_equipment_by_type("Accessory")
+        accessory = sorted(accessories, key=lambda x: x['level'])[2]  # Third accessory
+
+        if player.has_equipment(accessory['id']):
+            update_player_equipment(player, accessory['id'], "Accessory")
+            await ctx.send(f"Successfully equipped {accessory['name']}!")
+        else:
+            if update_player_purchase(player, accessory['id'], accessory['price'], "Accessory"):
+                await ctx.send(f"Successfully purchased and equipped {accessory['name']}!")
+            else:
+                await ctx.send("Purchase failed! Check your gold and requirements.")
+
+        await self.display_accessories_shop(ctx)
+
+    @interactions.component_callback("accessory_upgrade_4")
+    async def accessory_upgrade_4_callback(self, ctx: interactions.ComponentContext):
+        player = get_player_by_discord_id(str(ctx.author.id))
+        accessories = get_equipment_by_type("Accessory")
+        accessory = sorted(accessories, key=lambda x: x['level'])[3]  # Fourth accessory
+
+        if player.has_equipment(accessory['id']):
+            update_player_equipment(player, accessory['id'], "Accessory")
+            await ctx.send(f"Successfully equipped {accessory['name']}!")
+        else:
+            if update_player_purchase(player, accessory['id'], accessory['price'], "Accessory"):
+                await ctx.send(f"Successfully purchased and equipped {accessory['name']}!")
+            else:
+                await ctx.send("Purchase failed! Check your gold and requirements.")
+
+        await self.display_accessories_shop(ctx)
