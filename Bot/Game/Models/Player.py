@@ -152,4 +152,61 @@ class Player:
                 equipment_power += item_power
         
         return equipment_power
-    
+
+    def has_equipment(self, equipment_id: str) -> bool:
+        """Check if player owns specific equipment"""
+        return equipment_id in self.inventory
+
+    def has_equipped(self, equipment_id: str) -> bool:
+        """Check if player has specific equipment equipped"""
+        for item in self.equipment.values():
+            # Handle both dictionary and string cases
+            if isinstance(item, dict):
+                if item.get('id') == equipment_id:
+                    return True
+            elif isinstance(item, str):
+                if item == equipment_id:
+                    return True
+        return False
+
+    def can_afford(self, price: int) -> bool:
+        """Check if player has enough gold"""
+        return self.gold >= price
+
+    def can_equip(self, level_requirement: int) -> bool:
+        """Check if player meets level requirement"""
+        return self.level >= level_requirement
+
+    def equip_item(self, new_item: dict, slot_type: str) -> None:
+        """
+        Equip new item to specified slot and move current item to inventory
+        slot_type should be "Weapon", "Armor", "Helmet", or "Accessory"
+        """
+        current_item = self.equipment.get(slot_type)
+        if current_item:
+            # Add current item's ID to inventory if not already there
+            if isinstance(current_item, dict) and current_item.get('id') not in self.inventory:
+                self.inventory.append(current_item['id'])
+            elif isinstance(current_item, str) and current_item not in self.inventory:
+                self.inventory.append(current_item)
+        
+        # Equip new item
+        self.equipment[slot_type] = new_item
+
+    def purchase_equipment(self, equipment_id: str, price: int, slot_type: str) -> bool:
+        """
+        Purchase equipment and add to inventory
+        Returns True if purchase successful
+        """
+        if not self.can_afford(price):
+            return False
+
+        self.gold -= price
+        self.inventory.append(equipment_id)
+        self.equip_item(get_equipment_by_id(equipment_id), slot_type)
+        return True
+
+    # Mark old functions as deprecated or remove them
+    def equip_new_weapon(self, new_weapon: dict) -> None:
+        """Deprecated: Use equip_item instead"""
+        self.equip_item(new_weapon, "Weapon")

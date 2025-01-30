@@ -1,5 +1,6 @@
 from Game.Database.database import Database
 from Game.Models.Player import Player
+from Game.Managers.equipment_db_connection import get_equipment_by_id
 import pymongo
 import random
 
@@ -117,3 +118,42 @@ async def handle_gypsy_debuff(player: Player):
     )
 
     return
+
+def update_player_purchase(player: Player, equipment_id: str, price: int, slot_type: str) -> bool:
+    """
+    Update player's gold, inventory, and equipment after purchase
+    Returns True if update successful
+    """
+    if player.purchase_equipment(equipment_id, price, slot_type):
+        players_collection.update_one(
+            {"discord_id": player.discord_id},
+            {
+                "$set": {
+                    "gold": player.gold,
+                    "equipment": player.equipment,
+                    "inventory": player.inventory
+                }
+            }
+        )
+        return True
+    return False
+
+def update_player_equipment(player: Player, equipment_id: str, slot_type: str) -> bool:
+    """
+    Update player's equipment and inventory
+    Returns True if update successful
+    """
+    equipment_data = get_equipment_by_id(equipment_id)
+    if equipment_data:
+        player.equip_item(equipment_data, slot_type)
+        players_collection.update_one(
+            {"discord_id": player.discord_id},
+            {
+                "$set": {
+                    "equipment": player.equipment,
+                    "inventory": player.inventory
+                }
+            }
+        )
+        return True
+    return False
