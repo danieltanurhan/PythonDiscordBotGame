@@ -38,7 +38,7 @@ class ShopEquipmentUpgradeCog(interactions.Extension):
     def _create_equipment_buttons(self, player, items, equipment_type, start_idx=0):
         """Generic button creator for equipment types"""
         buttons = []
-        for i in range(4):
+        for i in range(len(items)):
             if start_idx + i >= len(items):
                 break
                 
@@ -66,7 +66,7 @@ class ShopEquipmentUpgradeCog(interactions.Extension):
                 button.label = f"${item['price']}"
                 
             buttons.append(button)
-            
+
         return buttons
 
     async def _create_equipment_display(self, ctx, equipment_type, page_number=None):
@@ -120,11 +120,16 @@ class ShopEquipmentUpgradeCog(interactions.Extension):
         )
 
         paginator.page_index = self.current_page
-        paginator.custom_buttons = [
-            interactions.ActionRow(nav_buttons['back']),
-            interactions.ActionRow(*equipment_buttons[:3]),
-            interactions.ActionRow(equipment_buttons[3]) if len(equipment_buttons) > 3 else None
-        ]
+
+        buttons_per_row = 3
+        button_rows = []
+        for i in range(0, len(equipment_buttons), buttons_per_row):
+            row_buttons = equipment_buttons[i:i + buttons_per_row]
+            if row_buttons:  # Only create row if there are buttons
+                button_rows.append(interactions.ActionRow(*row_buttons))
+
+        paginator.custom_buttons = [interactions.ActionRow(nav_buttons['back'])] + button_rows
+        
         paginator.show_first_button = False
         paginator.show_last_button = False
 
@@ -183,7 +188,7 @@ class ShopEquipmentUpgradeCog(interactions.Extension):
         paginator_dict = await self._create_equipment_display(ctx, "Armor")
         await ctx.edit_origin(**paginator_dict)
 
-    @interactions.component_callback(re.compile("^armor_upgrade_[1-4]$"))
+    @interactions.component_callback(re.compile("^armor_upgrade_[1-9]$"))
     async def armor_upgrade_callback(self, ctx: interactions.ComponentContext):
         await self._handle_equipment_upgrade(ctx, "Armor")
 
@@ -198,7 +203,7 @@ class ShopEquipmentUpgradeCog(interactions.Extension):
         paginator_dict = await self._create_equipment_display(ctx, "Helmet")
         await ctx.edit_origin(**paginator_dict)
 
-    @interactions.component_callback(re.compile("^helmet_upgrade_[1-4]$"))
+    @interactions.component_callback(re.compile("^helmet_upgrade_[1-9]$"))
     async def helmet_upgrade_callback(self, ctx: interactions.ComponentContext):
         await self._handle_equipment_upgrade(ctx, "Helmet")
 
@@ -213,7 +218,7 @@ class ShopEquipmentUpgradeCog(interactions.Extension):
         paginator_dict = await self._create_equipment_display(ctx, "Accessory")
         await ctx.edit_origin(**paginator_dict)
 
-    @interactions.component_callback(re.compile("^accessory_upgrade_[1-4]$"))
+    @interactions.component_callback(re.compile("^accessory_upgrade_[1-9]$"))
     async def accessory_upgrade_callback(self, ctx: interactions.ComponentContext):
         await self._handle_equipment_upgrade(ctx, "Accessory")
 
@@ -228,6 +233,6 @@ class ShopEquipmentUpgradeCog(interactions.Extension):
         paginator_dict = await self._create_equipment_display(ctx, "Weapon")
         await ctx.edit_origin(**paginator_dict)
 
-    @interactions.component_callback(re.compile("^weapon_upgrade_[1-4]$"))
+    @interactions.component_callback(re.compile("^weapon_upgrade_[1-9]$"))
     async def weapon_upgrade_callback(self, ctx: interactions.ComponentContext):
         await self._handle_equipment_upgrade(ctx, "Weapon")

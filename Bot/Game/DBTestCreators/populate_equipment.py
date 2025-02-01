@@ -215,11 +215,27 @@ equipment_data = [
   }
 ]
 
+eq_data = [
+    {
+    "id": "W006",
+    "name": "Grand Sword",
+    "level": 7,
+    "type": "Weapon",
+    "stats": {
+      "Strength": 10,
+      "Agility": 10,
+      "Intelligence": 10,
+      "Vitality": 10
+    },
+    "price": 1000
+  }
+]
+
 def populate_equipment():
     db = Database()
     equipment_collection = db.get_equipment_collection()
     
-    equipment_collection.insert_many(equipment_data)
+    equipment_collection.insert_many(eq_data)
     # print(f"Populated {len(monsters)} monsters")
 
 if __name__ == "__main__":
