@@ -1,5 +1,11 @@
-b/
-__pycache__
-venv
-.env
-chillinrooms/
+# Ignore Python virtual environments
+venv/
+__pycache__/
+
+# Ignore Node.js dependencies
+node_modules/
+
+# Ignore system files and logs
+.DS_Store
+Thumbs.db
+*.log

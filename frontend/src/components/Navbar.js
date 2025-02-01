@@ -1,5 +1,5 @@
 import React from "react";
-import styles from "./Navbar.module.css";
+import styles from "../styles/componentStyles/Navbar.module.css";
 
 const Navbar = () => {
   return (
@@ -13,8 +13,8 @@ const Navbar = () => {
       <a className={styles.link} href="/command">
         Commads
       </a>
-      <a className={styles.link} href="/donate">
-        Donate
+      <a className={styles.link} href="/leaderboard">
+        Leaderboard
       </a>
       <a className={styles.link} href="/officialServer">
         Official Server

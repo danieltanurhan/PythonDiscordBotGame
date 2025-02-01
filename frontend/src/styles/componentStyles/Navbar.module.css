@@ -1,5 +1,5 @@
 .nav {
-  background-color: #333;
+  background-color: #1a1a1a;
   color: white;
   padding: 1rem;
 }
@@ -8,10 +8,11 @@
   color: white;
   text-decoration: none;
   margin-right: 1rem;
+  transition: color 0.3s ease;
 }
 
 .link:hover {
-  text-decoration: underline;
+  color: #1e90ff;
 }
 
 .logo {
