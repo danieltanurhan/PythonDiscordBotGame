@@ -17,7 +17,7 @@ class ShopCog(interactions.Extension):
         """Create fresh navigation buttons"""
         return {
             'back': interactions.Button(style=ButtonStyle.SECONDARY, label="Back", custom_id="shop_button"),
-            'return': interactions.Button(style=ButtonStyle.SECONDARY, label="Return", custom_id="go_profile")
+            'return': interactions.Button(style=ButtonStyle.SECONDARY, label="Return", custom_id="go_camp")
         }
 
     @interactions.slash_command(

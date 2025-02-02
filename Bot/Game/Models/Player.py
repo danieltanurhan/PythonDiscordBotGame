@@ -47,8 +47,14 @@ class Player:
         self.current_party_id = None
         self.guild_id = None
         self.tower_level = 1
+        self.loot_inventory = {}  # Dictionary to store loot_id: quantity
+        self.upgrades = {
+            "salesman": 1,
+            "worker": 1,
+            "mount": 1
+        }
         
-    def __init__(self, discord_id: str, username: str, created_at: datetime = datetime.utcnow(), last_active: datetime = datetime.utcnow(), level: int = 1, experience: int = 0, gold: int = 0, stats: Dict = {"strength": 10, "agility": 10, "intelligence": 10, "vitality": 10}, max_hp: int = 100, current_hp: int = 100, equipment: Dict = {"Weapon": get_equipment_by_id("W000"), "Armor": get_equipment_by_id("A000"), "Helmet": get_equipment_by_id("H000"), "Accessory": get_equipment_by_id("ACC000")}, inventory: List = [], inventory_size: int = 20, character_class: Optional[str] = None, current_party_id: Optional[str] = None, guild_id: Optional[str] = None, tower_level: int = 1):
+    def __init__(self, discord_id: str, username: str, created_at: datetime = datetime.utcnow(), last_active: datetime = datetime.utcnow(), level: int = 1, experience: int = 0, gold: int = 0, stats: Dict = {"strength": 10, "agility": 10, "intelligence": 10, "vitality": 10}, max_hp: int = 100, current_hp: int = 100, equipment: Dict = {"Weapon": get_equipment_by_id("W000"), "Armor": get_equipment_by_id("A000"), "Helmet": get_equipment_by_id("H000"), "Accessory": get_equipment_by_id("ACC000")}, inventory: List = [], inventory_size: int = 20, character_class: Optional[str] = None, current_party_id: Optional[str] = None, guild_id: Optional[str] = None, tower_level: int = 1, loot_inventory: Dict = None, upgrades: Dict = None):
         self.discord_id = discord_id
         self.username = username
         self.created_at = created_at
@@ -66,6 +72,12 @@ class Player:
         self.current_party_id = current_party_id
         self.guild_id = guild_id
         self.tower_level = tower_level
+        self.loot_inventory = loot_inventory if loot_inventory is not None else {}
+        self.upgrades = upgrades if upgrades is not None else {
+            "salesman": 1,
+            "worker": 1,
+            "mount": 1
+        }
 
     def to_dict(self) -> Dict:
         """Convert player data to dictionary"""
@@ -85,7 +97,9 @@ class Player:
             "character_class": self.character_class,
             "current_party_id": self.current_party_id,
             "guild_id": self.guild_id,
-            "tower_level": self.tower_level
+            "tower_level": self.tower_level,
+            "loot_inventory": self.loot_inventory,
+            "upgrades": self.upgrades
         }
 
     @classmethod
@@ -124,6 +138,12 @@ class Player:
         player.current_party_id = data.get("current_party_id")
         player.guild_id = data.get('guild_id')
         player.tower_level = data.get('tower_level')
+        player.loot_inventory = data.get("loot_inventory", {})
+        player.upgrades = data.get("upgrades", {
+            "salesman": 1,
+            "worker": 1,
+            "mount": 1
+        })
 
         return player
     
@@ -210,3 +230,64 @@ class Player:
     def equip_new_weapon(self, new_weapon: dict) -> None:
         """Deprecated: Use equip_item instead"""
         self.equip_item(new_weapon, "Weapon")
+
+    # Add new methods for loot management
+    def add_loot(self, loot_id: str, quantity: int = 1) -> None:
+        """Add loot to the player's loot inventory"""
+        if loot_id in self.loot_inventory:
+            self.loot_inventory[loot_id] += quantity
+        else:
+            self.loot_inventory[loot_id] = quantity
+
+    def remove_loot(self, loot_id: str = None, quantity: int = None) -> bool:
+        """
+        Remove loot from the player's loot inventory
+        If no loot_id is provided, clears entire inventory
+        If no quantity is provided, removes all of the specified loot
+        Returns True if successful, False if not enough loot or invalid loot_id
+        """
+        # Clear entire inventory if no loot_id provided
+        if loot_id is None:
+            self.loot_inventory.clear()
+            return True
+            
+        # Check if loot exists in inventory
+        if loot_id not in self.loot_inventory:
+            return False
+            
+        # Remove all of specific loot if no quantity provided
+        if quantity is None:
+            del self.loot_inventory[loot_id]
+            return True
+            
+        # Remove specific quantity if provided
+        if self.loot_inventory[loot_id] >= quantity:
+            self.loot_inventory[loot_id] -= quantity
+            if self.loot_inventory[loot_id] == 0:
+                del self.loot_inventory[loot_id]
+            return True
+            
+        return False
+
+    def clear_loot(self) -> None:
+        """Clear all loot from inventory"""
+        self.loot_inventory.clear()
+
+    def get_loot_quantity(self, loot_id: str) -> int:
+        """Get the quantity of a specific loot item"""
+        return self.loot_inventory.get(loot_id, 0)
+
+    # Add new methods for upgrade management
+    def get_upgrade_level(self, upgrade_type: str) -> int:
+        """Get the level of a specific upgrade"""
+        return self.upgrades.get(upgrade_type, 1)
+
+    def upgrade(self, upgrade_type: str) -> bool:
+        """
+        Increment the level of a specific upgrade
+        Returns True if successful, False if upgrade_type doesn't exist
+        """
+        if upgrade_type in self.upgrades:
+            self.upgrades[upgrade_type] += 1
+            return True
+        return False

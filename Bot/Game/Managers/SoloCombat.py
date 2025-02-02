@@ -88,18 +88,78 @@ class RaidManager:
             selected_monsters.append(monster)
         
         return selected_monsters
-    
+
+    def generate_monster_loot(self, monster_level: int) -> Dict[str, int]:
+        """
+        Generate loot rewards based on monster level
+        Returns a dictionary of loot_id: quantity
+        """
+        loot_rewards = {}
+        
+        # Define loot tiers based on monster level
+        available_loot = []
+        if monster_level >= 1:
+            available_loot.append("L001")  # Monster Hide
+        if monster_level >= 10:
+            available_loot.append("L002")  # Shiny Crystal
+        if monster_level >= 20:
+            available_loot.append("L003")  # Ancient Relic
+        if monster_level >= 30:
+            available_loot.append("L004")  # Dragon Scale
+        if monster_level >= 40:
+            available_loot.append("L005")  # Magic Essence
+        if monster_level >= 50:
+            available_loot.append("L006")  # Golden Feather
+            
+        # Calculate max items based on monster level
+        max_items = min(monster_level, 5)  # Cap at 5 items maximum
+        num_items = random.randint(0, max_items)
+        
+        # Generate random loot from available items
+        for _ in range(num_items):
+            if available_loot:
+                loot_id = random.choice(available_loot)
+                loot_rewards[loot_id] = loot_rewards.get(loot_id, 0) + 1
+                
+        return loot_rewards
+
+    async def process_battle(self, player: Player, monster: Monster) -> Dict:
+        player_power = self.combat_system.calculate_power_score(player, True)
+        monster_power = self.combat_system.calculate_power_score(monster, False)
+            
+        player_wins = player_power > monster_power
+        
+        rewards = {
+            "experience": monster.experience_reward if player_wins else 0,
+            "loot": {}  # Initialize empty loot dictionary
+        }
+        
+        if player_wins:
+            rewards["loot"] = self.generate_monster_loot(monster.level)
+            # Add loot to player's inventory
+            for loot_id, quantity in rewards["loot"].items():
+                player.add_loot(loot_id, quantity)
+        
+        damage_taken = monster.damage if not player_wins else 0
+        
+        return {
+            "player_won": player_wins,
+            "damage_taken": damage_taken,
+            "rewards": rewards,
+            "monster_name": monster.name
+        }
+
     async def process_raid(self, player: Player, tower_level: int) -> Dict:
         monsters = await self.generate_monsters(tower_level, player.level)
         
         raid_results = {
             "monsters_defeated": [],
             "monsters_defeated_by": [],
-            "total_rewards": {"gold": 0, "experience": 0},
+            "total_rewards": {"experience": 0, "loot": {}},  # Modified to handle loot
             "battles": [],
             "raid_complete": False,
             "player_survived": True,
-            "damage_taken": 0, 
+            "damage_taken": 0,
             "max_hp": player.max_hp,
             "current_hp": player.current_hp
         }
@@ -114,40 +174,24 @@ class RaidManager:
             
             if battle_result["player_won"]:
                 raid_results["monsters_defeated"].append(monster.name)
-                raid_results["total_rewards"]["gold"] += battle_result["rewards"]["gold"]
                 raid_results["total_rewards"]["experience"] += battle_result["rewards"]["experience"]
+                
+                # Aggregate loot rewards
+                for loot_id, quantity in battle_result["rewards"]["loot"].items():
+                    if loot_id in raid_results["total_rewards"]["loot"]:
+                        raid_results["total_rewards"]["loot"][loot_id] += quantity
+                    else:
+                        raid_results["total_rewards"]["loot"][loot_id] = quantity
             else:
                 raid_results["monsters_defeated_by"].append(monster.name)
-                player.current_hp -= battle_result["damage_taken"]
                 raid_results["damage_taken"] += battle_result["damage_taken"]
-                if raid_results["player_survived"] <= False:
+                if player.current_hp <= 0:
                     break
-                break
         
         raid_results["raid_complete"] = len(raid_results["monsters_defeated"]) == len(monsters)
         raid_results["current_hp"] = player.current_hp
         raid_results["max_hp"] = player.max_hp
         return raid_results
-
-    async def process_battle(self, player: Player, monster: Monster) -> Dict:
-        player_power = self.combat_system.calculate_power_score(player, True)
-        monster_power = self.combat_system.calculate_power_score(monster, False)
-            
-        player_wins = player_power > monster_power
-        
-        rewards = {
-            "gold": monster.gold_reward if player_wins else 0,
-            "experience": monster.experience_reward if player_wins else 0
-        }
-        
-        damage_taken = monster.damage if not player_wins else 0
-        
-        return {
-            "player_won": player_wins,
-            "damage_taken": damage_taken,
-            "rewards": rewards,
-            "monster_name": monster.name
-        }
 
 def create_raid_summary(results: Dict) -> str:
     summary = "🗡️ **Raid Summary** 🗡️"
@@ -163,8 +207,12 @@ def create_raid_summary(results: Dict) -> str:
             summary += f"❌ {monster_id}\n"
     
     summary += "\n**Rewards:**\n"
-    summary += f"💰 Gold: {results['total_rewards']['gold']:.0f}\n"
     summary += f"✨ Experience: {results['total_rewards']['experience']:.0f}\n"
+    
+    if results['total_rewards']['loot']:
+        summary += "\n**Loot Acquired:**\n"
+        for loot_id, quantity in results['total_rewards']['loot'].items():
+            summary += f"🎁 {loot_id}: {quantity}x\n"
     
     if results["raid_complete"]:
         summary += "\n🏆 Raid Complete! 🏆"
@@ -174,6 +222,7 @@ def create_raid_summary(results: Dict) -> str:
         summary += "\n💀 Raid Failed - Player Defeated"
     
     return summary
+
 
 async def handle_raid_command(player: Player):
     raid_manager = RaidManager()
@@ -193,9 +242,9 @@ async def handle_raid_command(player: Player):
     
     # If player survived, process rewards
     reward_update = update_player_rewards(
-        player, 
-        results["total_rewards"]["gold"], 
-        results["total_rewards"]["experience"]
+        player,
+        results["total_rewards"]["experience"],
+        results
     )
     
     # Generate raid summary
@@ -206,8 +255,3 @@ async def handle_raid_command(player: Player):
         summary += f"\n🎉 **Level Up!** You are now level {reward_update['new_level']}! 🎉"
     
     return summary
-
-async def handle_camp_command(player):
-    player.current_hp = player.max_hp
-    update_player_hp(player)
-    return "💊 You're healed! 💊 Current ❤️ HP: " + str(player.current_hp)

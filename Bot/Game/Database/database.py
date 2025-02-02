@@ -30,3 +30,6 @@ class Database:
 
     def get_equipment_collection(self):
         return self.db['equipment']
+
+    def get_loot_collection(self):
+        return self.db['loot_items']

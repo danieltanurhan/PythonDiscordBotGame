@@ -42,31 +42,40 @@ def update_player_hp(player: Player) -> None:
         }}
     )
 
-def update_player_rewards(player: Player, gold: int, experience: int) -> dict:
-    player.gold += gold
+def update_player_rewards(player: Player, experience: int, raid_results: dict) -> dict:
+    """
+    Update player's experience and loot inventory after a raid
+    Args:
+        player: Player object
+        experience: Experience gained
+        raid_results: Dictionary containing raid results including loot
+    Returns:
+        Dictionary with update results
+    """
     player.experience += experience
     
+    # Calculate level up
     base_xp = 100
     level_multiplier = 1.5
     new_level = int((player.experience / base_xp) ** (1 / level_multiplier)) + 1
     
     update_result = {
-        "gold_gained": gold,
         "experience_gained": experience,
-        "leveled_up": new_level > player.level
+        "leveled_up": new_level > player.level,
+        "loot_gained": raid_results.get("total_rewards", {}).get("loot", {})
     }
     
     if update_result["leveled_up"]:
         player.level = new_level
         update_result["new_level"] = new_level
     
+    # Update database with new player state
     players_collection.update_one(
         {"discord_id": player.discord_id}, 
         {"$set": {
-            "current_hp": player.current_hp,
-            "gold": player.gold,
             "experience": player.experience,
-            "level": player.level
+            "level": player.level,
+            "loot_inventory": player.loot_inventory
         }}
     )
     
@@ -155,5 +164,29 @@ def update_player_equipment(player: Player, equipment_id: str, slot_type: str) -
                 }
             }
         )
+        return True
+    return False
+
+def update_player_loot(player: Player) -> None:
+    """Update player's loot inventory in the database"""
+    players_collection.update_one(
+        {"discord_id": player.discord_id},
+        {"$set": {"loot_inventory": player.loot_inventory}}
+    )
+
+def update_player_upgrades(player: Player) -> None:
+    """Update player's upgrades in the database"""
+    players_collection.update_one(
+        {"discord_id": player.discord_id},
+        {"$set": {"upgrades": player.upgrades}}
+    )
+
+def update_player_upgrade(player: Player, upgrade_type: str) -> bool:
+    """
+    Update a specific player upgrade
+    Returns True if successful
+    """
+    if player.upgrade(upgrade_type):
+        update_player_upgrades(player)
         return True
     return False

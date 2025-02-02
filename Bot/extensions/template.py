@@ -13,7 +13,7 @@ from config import DEV_GUILD
 from src import logutil
 import random
 
-from Game.Managers.SoloCombat import handle_raid_command, handle_camp_command
+from Game.Managers.SoloCombat import handle_raid_command
 from Game.Managers.player_db_connection import get_player_by_discord_id, add_player, player_exists, handle_gypsy_debuff
 
 "Change this if you'd like - this labels log messages for debug mode"
@@ -36,9 +36,7 @@ class TemplateCog(interactions.Extension):
         discord_id = str(ctx.author.id)
 
         buttons = [
-            interactions.Button(style=ButtonStyle.PRIMARY, label="Go Camp", custom_id="go_camp"),
-            interactions.Button(style=ButtonStyle.PRIMARY, label="Raid", custom_id="raid_again"),
-            interactions.Button(style=ButtonStyle.PRIMARY, label="Shop", custom_id="shop_button")
+            interactions.Button(style=ButtonStyle.SECONDARY, label="Back", custom_id="go_camp"),
         ]
 
         if not player_exists(discord_id):
@@ -151,8 +149,7 @@ class TemplateCog(interactions.Extension):
 
         buttons = [
             interactions.Button(style=ButtonStyle.PRIMARY, label="Raid Again", custom_id="raid_again"),
-            interactions.Button(style=ButtonStyle.PRIMARY, label="Camp", custom_id="go_camp"),
-            interactions.Button(style=ButtonStyle.PRIMARY, label="Profile", custom_id="go_profile")
+            interactions.Button(style=ButtonStyle.SECONDARY, label="Back", custom_id="go_camp")
         ]
 
         if not player:
@@ -174,44 +171,6 @@ class TemplateCog(interactions.Extension):
             embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed, components=buttons)
 
-
-    @interactions.slash_command(
-        "camp", description="Go back to camp", scopes=[DEV_GUILD] if DEV_GUILD else None
-    )
-    async def go_camp(self, ctx: interactions.SlashContext):
-        await self._go_camp(ctx)
-    
-    
-    @interactions.component_callback("go_camp")
-    async def go_camp_callback(self, ctx: interactions.ComponentContext):
-        await self._go_camp(ctx)
-    
-    async def _go_camp(self, ctx: interactions.contexts):
-        """Handle the camp command"""
-        discord_id = str(ctx.author.id)
-        player = get_player_by_discord_id(discord_id)
-
-        buttons = [
-            interactions.Button(style=ButtonStyle.PRIMARY, label="Raid", custom_id="raid_again"),
-            interactions.Button(style=ButtonStyle.PRIMARY, label="Gypsy Debuff", custom_id="gypsy_debuff"),
-            interactions.Button(style=ButtonStyle.PRIMARY, label="Profile", custom_id="go_profile")
-        ]
-
-        if not player:
-            await ctx.send("You need to create a character first. Use the `/start` command to begin your adventure!")
-            return
-
-        # Process the camp using the handle_camp_command function
-        camp_summary = await handle_camp_command(player)
-
-        # Create an embed with the camp results
-        embed = Embed(
-            title="Camp Results",
-            description=camp_summary,
-            color=0x00ff00
-        )
-
-        await ctx.send(embed=embed, components=buttons)
     
     @interactions.component_callback("gypsy_debuff")
     async def gypsy_debuff_callback(self, ctx: interactions.ComponentContext):
@@ -338,7 +297,7 @@ class TemplateCog(interactions.Extension):
         value = 0
         ace_count = 0
         card_values = {
-            "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "10": 10,
+            "2": 2, "3": 3, "4": 5, "6": 6, "7": 7, "8": 8, "9": 9, "10": 10,
             "J": 10, "Q": 10, "K": 10, "A": 11
         }
 
@@ -352,4 +311,4 @@ class TemplateCog(interactions.Extension):
             ace_count -= 1
 
         return value
-    
+

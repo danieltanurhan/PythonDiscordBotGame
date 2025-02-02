@@ -217,17 +217,17 @@ equipment_data = [
 
 eq_data = [
     {
-    "id": "W006",
-    "name": "Grand Sword",
-    "level": 7,
-    "type": "Weapon",
+    "id": "A004",
+    "name": "Gold Plate Armor",
+    "level": 5,
+    "type": "Armor",
     "stats": {
-      "Strength": 10,
-      "Agility": 10,
-      "Intelligence": 10,
-      "Vitality": 10
+      "Strength": 7,
+      "Agility": 7,
+      "Intelligence": 0,
+      "Vitality": 7
     },
-    "price": 1000
+    "price": 500
   }
 ]
 
