@@ -5,6 +5,7 @@ from Game.Models.Monster import Monster
 from Game.Models.Player import Player
 from Game.Database.database import Database
 from Game.Managers.player_db_connection import handle_player_death, update_player_rewards, update_player_hp
+from Game.Managers.loot_db_connection import get_all_loot
 
 class CombatSystem:
     @staticmethod
@@ -89,37 +90,44 @@ class RaidManager:
         
         return selected_monsters
 
-    def generate_monster_loot(self, monster_level: int) -> Dict[str, int]:
+    def generate_monster_loot(self, monster_level: int) -> Dict[str, dict]:
         """
         Generate loot rewards based on monster level
-        Returns a dictionary of loot_id: quantity
+        Returns a dictionary of loot_id: {quantity: int, name: str}
         """
         loot_rewards = {}
+        all_loot = get_all_loot()
         
-        # Define loot tiers based on monster level
-        available_loot = []
-        if monster_level >= 1:
-            available_loot.append("L001")  # Monster Hide
-        if monster_level >= 10:
-            available_loot.append("L002")  # Shiny Crystal
-        if monster_level >= 20:
-            available_loot.append("L003")  # Ancient Relic
-        if monster_level >= 30:
-            available_loot.append("L004")  # Dragon Scale
-        if monster_level >= 40:
-            available_loot.append("L005")  # Magic Essence
-        if monster_level >= 50:
-            available_loot.append("L006")  # Golden Feather
+        # Filter available loot based on monster level
+        # Every 10 levels unlocks new loot tier
+        # Level 1-9: L001
+        # Level 10-19: L001, L002
+        # Level 20-29: L001, L002, L003, etc.
+        max_loot_tier = (monster_level // 10) + 1
+        available_loot = [
+            loot for loot in all_loot 
+            if int(loot['id'].replace('L', '')) <= max_loot_tier
+        ]
+        
+        if not available_loot:
+            return {}
             
         # Calculate max items based on monster level
-        max_items = min(monster_level, 5)  # Cap at 5 items maximum
-        num_items = random.randint(0, max_items)
+        max_items = min(monster_level // 5, 5)  # Cap at 5 items, 1 item per 5 levels
+        num_items = random.randint(1, max_items) if max_items > 0 else 0
         
         # Generate random loot from available items
         for _ in range(num_items):
             if available_loot:
-                loot_id = random.choice(available_loot)
-                loot_rewards[loot_id] = loot_rewards.get(loot_id, 0) + 1
+                chosen_loot = random.choice(available_loot)
+                loot_id = chosen_loot['id']
+                if loot_id in loot_rewards:
+                    loot_rewards[loot_id]['quantity'] += 1
+                else:
+                    loot_rewards[loot_id] = {
+                        'quantity': 1,
+                        'name': chosen_loot['name']
+                    }
                 
         return loot_rewards
 
@@ -137,8 +145,8 @@ class RaidManager:
         if player_wins:
             rewards["loot"] = self.generate_monster_loot(monster.level)
             # Add loot to player's inventory
-            for loot_id, quantity in rewards["loot"].items():
-                player.add_loot(loot_id, quantity)
+            for loot_id, loot_info in rewards["loot"].items():
+                player.add_loot(loot_id, loot_info['quantity'])
         
         damage_taken = monster.damage if not player_wins else 0
         
@@ -177,11 +185,11 @@ class RaidManager:
                 raid_results["total_rewards"]["experience"] += battle_result["rewards"]["experience"]
                 
                 # Aggregate loot rewards
-                for loot_id, quantity in battle_result["rewards"]["loot"].items():
+                for loot_id, loot_info in battle_result["rewards"]["loot"].items():
                     if loot_id in raid_results["total_rewards"]["loot"]:
-                        raid_results["total_rewards"]["loot"][loot_id] += quantity
+                        raid_results["total_rewards"]["loot"][loot_id]['quantity'] += loot_info['quantity']
                     else:
-                        raid_results["total_rewards"]["loot"][loot_id] = quantity
+                        raid_results["total_rewards"]["loot"][loot_id] = loot_info
             else:
                 raid_results["monsters_defeated_by"].append(monster.name)
                 raid_results["damage_taken"] += battle_result["damage_taken"]
@@ -211,8 +219,9 @@ def create_raid_summary(results: Dict) -> str:
     
     if results['total_rewards']['loot']:
         summary += "\n**Loot Acquired:**\n"
-        for loot_id, quantity in results['total_rewards']['loot'].items():
-            summary += f"🎁 {loot_id}: {quantity}x\n"
+        for loot_id in results['total_rewards']['loot']:
+            loot_info = results['total_rewards']['loot'][loot_id]
+            summary += f"🎁 {loot_info['name']}: {loot_info['quantity']}x\n"
     
     if results["raid_complete"]:
         summary += "\n🏆 Raid Complete! 🏆"

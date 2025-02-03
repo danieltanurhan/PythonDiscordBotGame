@@ -22,8 +22,6 @@ async def add_player(discord_id: str, username: str):
     
     # Create new player
     new_player = Player(discord_id, username)
-
-    print(new_player.to_dict())
     
     # Insert player into database
     players_collection.insert_one(new_player.to_dict())
@@ -171,7 +169,12 @@ def update_player_loot(player: Player) -> None:
     """Update player's loot inventory in the database"""
     players_collection.update_one(
         {"discord_id": player.discord_id},
-        {"$set": {"loot_inventory": player.loot_inventory}}
+        {
+            "$set": {
+                "loot_inventory": player.loot_inventory,
+                "gold": player.gold
+            }
+        }
     )
 
 def update_player_upgrades(player: Player) -> None:

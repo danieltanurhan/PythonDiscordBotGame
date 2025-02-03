@@ -138,6 +138,7 @@ class TemplateCog(interactions.Extension):
         await self._handle_raid(ctx)
     
     async def _handle_raid(self, ctx: interactions.contexts):
+        
         self.game_state = {
             "player_alive": True,
             "status": "ongoing"
@@ -145,16 +146,16 @@ class TemplateCog(interactions.Extension):
         """Handle the raid command"""
         discord_id = str(ctx.author.id)
         player = get_player_by_discord_id(discord_id)
-
+        if not player:
+            await ctx.send("You need to create a character first. Use the `/start` command to begin your adventure!")
+            return
 
         buttons = [
             interactions.Button(style=ButtonStyle.PRIMARY, label="Raid Again", custom_id="raid_again"),
             interactions.Button(style=ButtonStyle.SECONDARY, label="Back", custom_id="go_camp")
         ]
 
-        if not player:
-            await ctx.send("You need to create a character first. Use the `/start` command to begin your adventure!")
-            return
+        
 
         # Process the raid using the handle_raid_command function
         if player.current_hp <= 0:

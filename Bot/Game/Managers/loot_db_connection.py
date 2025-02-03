@@ -8,7 +8,9 @@ def get_loot_by_id(loot_id: str) -> dict:
     return loot_data
 
 def get_all_loot() -> list:
+    
     loot_data = loot_collection.find()
+    # print(loot_data[0])
     return [loot for loot in loot_data]
 
 def get_loot_price(loot_id: str) -> int:
