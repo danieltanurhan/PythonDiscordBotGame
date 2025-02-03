@@ -1,11 +1,14 @@
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
 from Game.Models.Monster import Monster
 from Game.Models.Player import Player
 from Game.Database.database import Database
 from Game.Managers.player_db_connection import handle_player_death, update_player_rewards, update_player_hp
 from Game.Managers.loot_db_connection import get_all_loot
+import interactions
+
+RAID_COOLDOWN_SECONDS = 60  # Adjust this value as needed
 
 class CombatSystem:
     @staticmethod
@@ -233,10 +236,23 @@ def create_raid_summary(results: Dict) -> str:
     return summary
 
 
-async def handle_raid_command(player: Player):
-    raid_manager = RaidManager()
+async def handle_raid_command(player: Player, ctx: interactions.SlashContext = None):
+    # Check cooldown using new player method
+    can_raid, remaining_cooldown, actual_cooldown = player.check_raid_cooldown()
     
+    if not can_raid:
+        if ctx:  # Only send message if context is provided
+            await ctx.send(
+                f"You must wait {remaining_cooldown:.1f}s before raiding again.\n"f"Actual cooldown: {actual_cooldown:.1f}s",
+                ephemeral=True
+            )
+        return None
+
+    # Update last raid time
+    player.last_raid_time = datetime.utcnow()
+
     # Process raid
+    raid_manager = RaidManager()
     results = await raid_manager.process_raid(player, player.tower_level)
     
     # Check player health after raid

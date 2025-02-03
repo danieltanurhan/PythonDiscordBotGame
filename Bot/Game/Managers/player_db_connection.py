@@ -73,7 +73,8 @@ def update_player_rewards(player: Player, experience: int, raid_results: dict) -
         {"$set": {
             "experience": player.experience,
             "level": player.level,
-            "loot_inventory": player.loot_inventory
+            "loot_inventory": player.loot_inventory,
+            "last_raid_time": player.last_raid_time
         }}
     )
     

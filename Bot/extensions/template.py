@@ -161,16 +161,16 @@ class TemplateCog(interactions.Extension):
         if player.current_hp <= 0:
             await ctx.send("You cannot raid while defeated! Use /camp to heal first.")
         else:
-            raid_summary = await handle_raid_command(player)
-           
-            # Create an embed with the raid results
-            embed = Embed(            
-                title="Raid Results",
-                description=raid_summary,
-                color=0x00ff00
-            )
-            embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
-        await ctx.send(embed=embed, components=buttons)
+            raid_summary = await handle_raid_command(player, ctx)
+            if raid_summary:  # Only send raid results if raid was actually performed
+                # Create an embed with the raid results
+                embed = Embed(            
+                    title="Raid Results",
+                    description=raid_summary,
+                    color=0x00ff00
+                )
+                embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+                await ctx.send(embed=embed, components=buttons)
 
     
     @interactions.component_callback("gypsy_debuff")

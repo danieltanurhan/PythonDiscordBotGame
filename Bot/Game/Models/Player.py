@@ -53,6 +53,7 @@ class Player:
             "worker": 1,
             "mount": 1
         }
+        self.last_raid_time = datetime.utcnow()
         
     def __init__(self, discord_id: str, username: str, created_at: datetime = datetime.utcnow(), last_active: datetime = datetime.utcnow(), level: int = 1, experience: int = 0, gold: int = 0, stats: Dict = {"strength": 10, "agility": 10, "intelligence": 10, "vitality": 10}, max_hp: int = 100, current_hp: int = 100, equipment: Dict = {"Weapon": get_equipment_by_id("W000"), "Armor": get_equipment_by_id("A000"), "Helmet": get_equipment_by_id("H000"), "Accessory": get_equipment_by_id("ACC000")}, inventory: List = [], inventory_size: int = 20, character_class: Optional[str] = None, current_party_id: Optional[str] = None, guild_id: Optional[str] = None, tower_level: int = 1, loot_inventory: Dict = None, upgrades: Dict = None):
         self.discord_id = discord_id
@@ -78,6 +79,7 @@ class Player:
             "worker": 1,
             "mount": 1
         }
+        self.last_raid_time = datetime.utcnow()
 
     def to_dict(self) -> Dict:
         """Convert player data to dictionary"""
@@ -99,7 +101,8 @@ class Player:
             "guild_id": self.guild_id,
             "tower_level": self.tower_level,
             "loot_inventory": self.loot_inventory,
-            "upgrades": self.upgrades
+            "upgrades": self.upgrades,
+            "last_raid_time": self.last_raid_time,  # Add this line
         }
 
     @classmethod
@@ -144,6 +147,7 @@ class Player:
             "worker": 1,
             "mount": 1
         })
+        player.last_raid_time = data.get("last_raid_time", datetime.utcnow())  # Add this line
 
         return player
     
@@ -291,3 +295,23 @@ class Player:
             self.upgrades[upgrade_type] += 1
             return True
         return False
+
+    def check_raid_cooldown(self) -> tuple[bool, float, float]:
+        """
+        Check if player can raid based on mount level and last raid time
+        Returns tuple of (can_raid: bool, remaining_cooldown: float)
+        """
+        mount_level = self.upgrades.get("mount", 1)
+        base_cooldown = 3.5  # Base cooldown in seconds
+        
+        # Reduce cooldown based on mount level (15% reduction per level)
+        cooldown_reduction = (mount_level - 1) * 0.15
+        actual_cooldown = max(0.5, base_cooldown * (1 - cooldown_reduction))
+        
+        current_time = datetime.utcnow()
+        time_since_last_raid = (current_time - self.last_raid_time).total_seconds()
+        
+        if time_since_last_raid >= actual_cooldown:
+            return True, 0, 0
+        
+        return False, actual_cooldown - time_since_last_raid, actual_cooldown
