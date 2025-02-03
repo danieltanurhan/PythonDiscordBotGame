@@ -33,3 +33,6 @@ class Database:
 
     def get_loot_collection(self):
         return self.db['loot_items']
+    
+    def get_upgrades_collection(self):
+        return self.db['upgrades']

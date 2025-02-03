@@ -37,11 +37,14 @@ class ShopCog(interactions.Extension):
             interactions.Button(style=ButtonStyle.PRIMARY, label="Weapons", custom_id="shop_weapons"),
             interactions.Button(style=ButtonStyle.PRIMARY, label="Armor", custom_id="shop_armor"),
             interactions.Button(style=ButtonStyle.PRIMARY, label="Helmets", custom_id="shop_helmets"),
-            interactions.Button(style=ButtonStyle.PRIMARY, label="Accessories", custom_id="shop_accessories")
+            interactions.Button(style=ButtonStyle.PRIMARY, label="Accessories", custom_id="shop_accessories"),
+            interactions.Button(style=ButtonStyle.PRIMARY, label="Upgrades", custom_id="shop_upgrades")
         ]
+
 
         component = [
             interactions.ActionRow(buttons[0], buttons[1], buttons[2], buttons[3]),
+            interactions.ActionRow(buttons[4]),
             interactions.ActionRow(self._create_navigation_buttons()['return'])
             ]
 
