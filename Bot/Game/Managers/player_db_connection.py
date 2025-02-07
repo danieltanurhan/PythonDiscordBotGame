@@ -182,7 +182,12 @@ def update_player_upgrades(player: Player) -> None:
     """Update player's upgrades in the database"""
     players_collection.update_one(
         {"discord_id": player.discord_id},
-        {"$set": {"upgrades": player.upgrades}}
+        {
+            "$set": {
+                "upgrades": player.upgrades,
+                "gold": player.gold
+            }
+        }
     )
 
 def update_player_upgrade(player: Player, upgrade_type: str) -> bool:
