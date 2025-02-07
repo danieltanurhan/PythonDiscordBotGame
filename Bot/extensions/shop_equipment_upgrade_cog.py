@@ -90,11 +90,11 @@ class ShopEquipmentUpgradeCog(interactions.Extension):
                 
                 name = item['name']
                 description = item.get('description', 'No description available.')
-                
+                icon = item.get('icon')
                 if is_equipped:
-                    item_info = f"{name} - EQUIPPED\n{description}"
+                    item_info = f"{name} {icon} - EQUIPPED\n{description}"
                 elif is_owned:
-                    item_info = f"{name} - OWNED\n{description}"
+                    item_info = f"{name} {icon} - OWNED\n{description}"
                 else:
                     level_req = f"(Lvl {item['level']})"
                     price = f"{item['price']} gold"
@@ -104,7 +104,7 @@ class ShopEquipmentUpgradeCog(interactions.Extension):
                     if not can_afford:
                         requirements.append("❌ Cannot afford")
                     req_text = " - " + ", ".join(requirements) if requirements else ""
-                    item_info = f"{name} {level_req} | {price}\n{description}{req_text}"
+                    item_info = f"{name} {icon} {level_req} | {price}\n{description}{req_text}"
                 
                 embed.add_field(name="\u200b", value=item_info, inline=False)
             
