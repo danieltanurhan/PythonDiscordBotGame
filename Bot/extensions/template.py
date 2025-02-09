@@ -5,7 +5,7 @@ This file will not be loaded as a cog or module
 import os
 
 import interactions
-from interactions import slash_command, SlashContext, Embed, ButtonStyle
+from interactions import Embed, ButtonStyle
 
 from config import DEV_GUILD
 
@@ -13,12 +13,10 @@ from config import DEV_GUILD
 from src import logutil
 import random
 
-from Game.Managers.SoloCombat import handle_raid_command
-from Game.Managers.player_db_connection import get_player_by_discord_id, add_player, player_exists, handle_gypsy_debuff
+from Game.Managers.player_db_connection import get_player_by_discord_id, add_player, player_exists
 
 "Change this if you'd like - this labels log messages for debug mode"
 logger = logutil.init_logger(os.path.basename(__file__))
-
 
 class TemplateCog(interactions.Extension):
     @interactions.slash_command(
@@ -47,7 +45,7 @@ class TemplateCog(interactions.Extension):
                 f"Welcome, {ctx.author.username}! Your adventure begins now. "
                 "Here's what you can do next:\n\n"
                 "• Use `/profile` to view your character stats\n"
-                "• Use `/raid` to go on a raid (requires level 5)\n"
+                "• Use `/camp` to heal and get started.\n"
                 "• Explore more commands to level up and grow stronger!"
             )
             embed.add_field(
@@ -55,7 +53,7 @@ class TemplateCog(interactions.Extension):
                 value=(
                     "1. Check your initial stats with `/profile`\n"
                     "2. Start gaining experience and gold\n"
-                    "3. Reach level 5 to unlock raids"
+                    "3. Go out to battle or raid to level up\n"
                 ),
                 inline=False
             )

@@ -98,16 +98,16 @@ class BattleCog(interactions.Extension):
             summary += "\n\n**Death Consequences:**"
             summary += f"\n💀 HP Restored: {death_summary['hp_restored']}"
             summary += f"\n💰 Gold Lost: {death_summary['gold_lost']}"
-        elif battle_result["player_won"]:
-            # Process rewards
-            reward_update = update_player_rewards(
-                player,
-                battle_result["rewards"]["experience"],
-                {"total_rewards": battle_result["rewards"]}
-            )
+       
+        # Process rewards
+        reward_update = update_player_rewards(
+            player,
+            battle_result["rewards"]["experience"],
+            {"total_rewards": battle_result["rewards"]}
+        )
             
-            if reward_update["leveled_up"]:
-                summary += f"\n🎉 **Level Up!** You are now level {reward_update['new_level']}! 🎉"
+        if reward_update["leveled_up"]:
+            summary += f"\n🎉 **Level Up!** You are now level {reward_update['new_level']}! 🎉"
 
         # Create and send embed
         embed = Embed(
