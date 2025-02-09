@@ -3,7 +3,7 @@ from interactions import slash_command, SlashContext, Embed, ButtonStyle
 from typing import Optional
 
 from config import DEV_GUILD
-from Game.Managers.player_db_connection import get_player_by_discord_id
+from Game.Managers.player_db_connection import get_player_by_discord_id, update_player_hp
 from Game.Managers.loot_db_connection import get_loot_by_id, get_loot_price
 
 class CampCog(interactions.Extension):
@@ -25,6 +25,11 @@ class CampCog(interactions.Extension):
         level_multiplier = 1.5
         current_level_xp = int(((player.level) ** level_multiplier) * base_xp)
         next_level_xp = int(((player.level + 1) ** level_multiplier) * base_xp)
+
+        if player.current_hp <= 100:
+            player_data['current_hp'] = "100"
+            player.current_hp = 100
+            update_player_hp(player)
 
 
         # Combine clan, balance, level, and tower info into one field
@@ -89,7 +94,7 @@ class CampCog(interactions.Extension):
         embed.set_author(name=ctx.author.display_name + "'s camp", icon_url=ctx.author.avatar_url)
 
         buttons = [
-            interactions.Button(style=ButtonStyle.PRIMARY, label="Raid", custom_id="raid_again"),
+            interactions.Button(style=ButtonStyle.PRIMARY, label="Battle", custom_id="battle_button"),
             interactions.Button(style=ButtonStyle.PRIMARY, label="Sell", custom_id="sell_button"),
             interactions.Button(style=ButtonStyle.PRIMARY, label="Shop", custom_id="shop_button"),
             interactions.Button(style=ButtonStyle.SECONDARY, label="Profile", custom_id="go_profile")

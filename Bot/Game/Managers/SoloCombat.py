@@ -8,6 +8,13 @@ from Game.Managers.player_db_connection import handle_player_death, update_playe
 from Game.Managers.loot_db_connection import get_all_loot
 import interactions
 
+from Game.Config.balance_config import (
+    STAT_WEIGHTS, BASE_LEVEL_POWER, MONSTER_LEVEL_POWER,
+    MONSTER_DAMAGE_WEIGHT, MONSTER_DEFENSE_WEIGHT,
+    MONSTER_RARITY_MULTIPLIERS, MIN_MINDSET_FACTOR,
+    MAX_MINDSET_FACTOR, MINDSET_IMPACT
+)
+
 RAID_COOLDOWN_SECONDS = 60  # Adjust this value as needed
 
 class CombatSystem:
@@ -17,35 +24,28 @@ class CombatSystem:
         base_score = 0
         
         if is_player:
-            # Base stats contribution
-            base_score += entity.stats["strength"] * 1.0
-            base_score += entity.stats["agility"] * 1.0
-            base_score += entity.stats["vitality"] * 1.0
-            base_score += entity.level * 5
+            # Base stats contribution using configured weights
+            for stat, weight in STAT_WEIGHTS.items():
+                base_score += entity.stats[stat] * weight
             
-            # Equipment bonus (we can expand this later)
+            # Level bonus
+            base_score += entity.level * BASE_LEVEL_POWER
+            
+            # Equipment bonus
             equipment_bonus = entity.calculate_equipment_power()
             base_score += equipment_bonus
         else:
-            # Monster power calculation
-            base_score += entity.level * 6
-            base_score += entity.damage * 1.3
-            base_score += entity.defense
+            # Monster power calculation with configured weights
+            base_score += entity.level * MONSTER_LEVEL_POWER
+            base_score += entity.damage * MONSTER_DAMAGE_WEIGHT
+            base_score += entity.defense * MONSTER_DEFENSE_WEIGHT
             
-            # Rarity multipliers
-            rarity_multipliers = {
-                "E": 1.0,
-                "D": 1.3,
-                "C": 1.6,
-                "B": 2.0,
-                "A": 2.5,
-                "S": 3.0
-            }
-            base_score *= rarity_multipliers.get(entity.rarity, 1.0)
+            # Apply rarity multiplier
+            base_score *= MONSTER_RARITY_MULTIPLIERS.get(entity.rarity, 1.0)
         
-        # Add randomness factor (mindset variable)
-        mindset = random.uniform(0, 10)
-        final_score = base_score * (1 + (mindset / 20))  # Mindset can affect up to ±50%
+        # Add randomness factor with configured impact
+        mindset = random.uniform(MIN_MINDSET_FACTOR, MAX_MINDSET_FACTOR)
+        final_score = base_score * (1 + (mindset * MINDSET_IMPACT))
         
         return final_score
 
@@ -152,6 +152,7 @@ class RaidManager:
                 player.add_loot(loot_id, loot_info['quantity'])
         
         damage_taken = monster.damage if not player_wins else 0
+        player.current_hp -= damage_taken
         
         return {
             "player_won": player_wins,
@@ -197,7 +198,8 @@ class RaidManager:
                 raid_results["monsters_defeated_by"].append(monster.name)
                 raid_results["damage_taken"] += battle_result["damage_taken"]
                 if player.current_hp <= 0:
-                    break
+                    raid_results["player_survived"] = False
+                break
         
         raid_results["raid_complete"] = len(raid_results["monsters_defeated"]) == len(monsters)
         raid_results["current_hp"] = player.current_hp

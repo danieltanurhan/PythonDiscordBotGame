@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import Dict, List, Optional
 import discord
 from Game.Managers.equipment_db_connection import get_equipment_by_id
+from Game.Config.balance_config import STAT_WEIGHTS, EQUIPMENT_LEVEL_SCALE
+
 
 starter_equipment_versions = {
             "Weapon": ["Wooden Sword", "Bronze Sword", "Iron Sword", "Steel Sword"],
@@ -153,25 +155,19 @@ class Player:
     
    
     def calculate_equipment_power(entity):
-        power_stats = {
-            'strength': 1.0,  # Note: lowercase to match your stats dict
-            'agility': 1.0,
-            'intelligence': 1.0,
-            'vitality': 1.0
-        }
-        
+        """Calculate total power from equipment stats"""
         equipment_power = 0
         
         for item in entity.equipment.values():
             if item:
-                # Calculate power based on individual stat weights
+                # Calculate power based on configured stat weights
                 item_power = sum(
                     item['stats'].get(stat.capitalize(), 0) * weight 
-                    for stat, weight in power_stats.items()
+                    for stat, weight in STAT_WEIGHTS.items()
                 )
                 
-                # Optional: Add level scaling
-                item_power *= (1 + (item.get('level', 1) - 1) * 0.1)
+                # Apply level scaling
+                item_power *= (1 + (item.get('level', 1) - 1) * EQUIPMENT_LEVEL_SCALE)
                 
                 equipment_power += item_power
         

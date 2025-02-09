@@ -66,11 +66,15 @@ def update_player_rewards(player: Player, experience: int, raid_results: dict) -
     if update_result["leveled_up"]:
         player.level = new_level
         update_result["new_level"] = new_level
+
+    # if raid_results["damage_taken"] > 0:
+    #     player.current_hp -= raid_results["damage_taken"]
     
     # Update database with new player state
     players_collection.update_one(
         {"discord_id": player.discord_id}, 
         {"$set": {
+            "current_hp": player.current_hp,
             "experience": player.experience,
             "level": player.level,
             "loot_inventory": player.loot_inventory,
